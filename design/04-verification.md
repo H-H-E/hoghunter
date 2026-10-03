@@ -6,26 +6,18 @@ The proof standard is deliberately strict: a successful compilation proves that 
 
 ## 1. Required Gradle gates
 
-The project root for every command below is:
-
-```text
-C:\Users\Windows\Downloads\Hcubed_The_Mercer_Contract\hoghunter
-```
-
-The supplied Gradle executable is `C:\Users\Windows\Downloads\Hcubed_The_Mercer_Contract\work\gradle-8.12\bin\gradle.bat`. Once the project exists, the preferred invocation is the project wrapper (`.\gradlew.bat`) so the project pins its Gradle distribution. Until a wrapper exists, use the supplied executable exactly:
+The project root for every command below is the repository root, i.e. wherever you cloned this
+repository:
 
 ```powershell
-Set-Location 'C:\Users\Windows\Downloads\Hcubed_The_Mercer_Contract\hoghunter'
-$gradle = 'C:\Users\Windows\Downloads\Hcubed_The_Mercer_Contract\work\gradle-8.12\bin\gradle.bat'
-& $gradle --version
-& $gradle compileJava --stacktrace
-& $gradle build --stacktrace
-& $gradle runData --stacktrace
+git clone https://github.com/H-H-E/hoghunter.git
+cd hoghunter
 ```
 
-The same gates with a wrapper are:
+The preferred invocation is the project wrapper (`.\gradlew.bat`) so the project pins its own Gradle distribution. That is how the committed gates below are meant to be run. If the wrapper is ever missing, generate it once from any Gradle 8.12 installation (`gradle wrapper`) and commit the resulting `gradlew`, `gradlew.bat`, and `gradle/wrapper/` files.
 
 ```powershell
+.\gradlew.bat --version
 .\gradlew.bat compileJava --stacktrace
 .\gradlew.bat build --stacktrace
 .\gradlew.bat runData --stacktrace
@@ -43,7 +35,7 @@ Before any gate, verify that the build is using the intended toolchain:
 
 ```powershell
 java -version
-& $gradle --version
+.\gradlew.bat --version
 ```
 
 The Java output must identify a 64-bit Java 21 VM. The Gradle output must show Gradle 8.12 or the wrapper-pinned equivalent, and the NeoForge dependency must resolve to `21.1.253`.
@@ -112,7 +104,6 @@ Keep each test deterministic: no random seed assertions, no wall-clock sleeps, n
 The dedicated-server test uses the generated development run, not a single-player integrated server. First accept the development EULA in the run directory and disable authentication for a local test account:
 
 ```powershell
-Set-Location 'C:\Users\Windows\Downloads\Hcubed_The_Mercer_Contract\hoghunter'
 New-Item -ItemType Directory -Force -Path '.\run\server' | Out-Null
 Set-Content -Path '.\run\server\eula.txt' -Value 'eula=true'
 ```
@@ -122,7 +113,7 @@ The future `server` run must use `gameDirectory = project.file('run/server')`. A
 The exact development launch command is:
 
 ```powershell
-& $gradle runServer --args='--nogui' --stacktrace
+.\gradlew.bat runServer --args='--nogui' --stacktrace
 ```
 
 `--nogui` is a Minecraft server program argument. `runServer` is the NeoGradle/ModDevGradle run task and must be executed from the project root so the development classpath loads the source mod. For a packaged proof after `build`, run a separately prepared NeoForge server whose `mods` directory contains the exact JAR under test; do not call the development classpath proof a packaged-server proof.

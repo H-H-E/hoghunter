@@ -81,7 +81,7 @@ hoghunter/
 
 ## Gradle files
 
-The four required project files are `settings.gradle`, `build.gradle`, `gradle.properties`, and the wrapper files under `gradle/wrapper`. The wrapper must use Gradle 8.12 and its `distributionUrl` must point at the Gradle 8.12 binary distribution. Use the already downloaded executable at `C:\Users\Windows\Downloads\Hcubed_The_Mercer_Contract\work\gradle-8.12\bin\gradle.bat` while generating the wrapper; do not change the Minecraft or NeoForge target.
+The four required project files are `settings.gradle`, `build.gradle`, `gradle.properties`, and the wrapper files under `gradle/wrapper`. The wrapper must use Gradle 8.12 and its `distributionUrl` must point at the Gradle 8.12 binary distribution. Generate the wrapper from any Gradle 8.12 installation (`gradle wrapper`); do not change the Minecraft or NeoForge target.
 
 `settings.gradle`:
 

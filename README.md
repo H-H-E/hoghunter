@@ -15,7 +15,7 @@ your own heart rate and noise level are the central survival stats.
 Requires **JDK 21** on the `PATH` (`java -version` must print 21).
 
 ```powershell
-git clone <this-repo>
+git clone https://github.com/H-H-E/hoghunter.git
 cd hoghunter
 
 .\gradlew.bat build               # compile + package  -> build/libs/hoghunter-0.1.0.jar
