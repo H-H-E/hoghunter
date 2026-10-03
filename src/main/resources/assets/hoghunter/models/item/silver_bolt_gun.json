@@ -1,11 +1,11 @@
 {
-  "parent": "minecraft:item/handheld",
+  "parent": "minecraft:block/block",
   "gui_light": "front",
   "textures": {
-    "metal": "minecraft:block/quartz_block",
+    "metal": "minecraft:block/quartz_block_side",
     "wood": "minecraft:block/dark_oak_planks",
     "band": "minecraft:block/copper_block",
-    "particle": "minecraft:block/quartz_block"
+    "particle": "minecraft:block/quartz_block_side"
   },
   "elements": [
     {

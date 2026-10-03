@@ -2,8 +2,12 @@
 """Deterministic resource integrity checks for Minecraft 1.21.1 (stdlib only).
 
 This catches missing client assets and silently ignored legacy data directories
-before launching Minecraft. It is complementary to live GameTests: it cannot
-prove rendering, audibility, vanilla resource IDs, or balance. Run from any cwd.
+before launching Minecraft. Vanilla model/texture references are checked against
+the actual ModDev Minecraft client resource JAR when available, or an explicit
+--minecraft-resources JAR. A pre-build run reports that optional check as skipped.
+Explicit model geometry must not inherit Minecraft's generated-item marker.
+This cannot prove rendering, audibility, vanilla gameplay IDs, or balance.
+Run from any cwd.
 """
 
 from __future__ import annotations
@@ -66,6 +70,144 @@ def local_ref(value, directory, suffix):
         return
     path = ASSETS / directory / (value.split(":", 1)[1] + suffix)
     check(path.is_file(), f"missing {directory} resource {value} ({label(path)})")
+
+
+class VanillaAssets:
+    """An index of real Minecraft assets; no guessed resource-name whitelist."""
+
+    def __init__(self, path):
+        self.path = path
+        with zipfile.ZipFile(path) as archive:
+            self.names = set(archive.namelist())
+        if "assets/minecraft/models/item/generated.json" not in self.names:
+            raise ValueError("JAR does not contain Minecraft client models")
+        self.references = set()
+        self.models = {}
+
+    def ref(self, value, directory, suffix, source):
+        if not isinstance(value, str) or value.startswith("#"):
+            return
+        namespace, separator, resource = value.partition(":")
+        if not separator:
+            namespace, resource = "minecraft", value
+        if namespace != "minecraft":
+            return
+        if directory == "models" and resource == "builtin/generated":
+            # ModelBakery supplies this marker in code, not as an archive entry.
+            return
+        name = f"assets/minecraft/{directory}/{resource}{suffix}"
+        self.references.add(name)
+        check(name in self.names,
+              f"{label(source)}: missing vanilla {directory} reference {value!r}; "
+              f"{name} is absent from {self.path.name}")
+
+    def model(self, resource, source):
+        """Read only the native parents reached by the mod's model graph."""
+        if resource not in self.models:
+            self.ref("minecraft:" + resource, "models", ".json", source)
+            name = f"assets/minecraft/models/{resource}.json"
+            data = {}
+            if name in self.names:
+                try:
+                    with zipfile.ZipFile(self.path) as archive:
+                        data = json.loads(archive.read(name), object_pairs_hook=object_no_duplicates)
+                    if not isinstance(data, dict):
+                        raise ValueError("model must be a JSON object")
+                except (OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
+                    check(False, f"{label(source)}: cannot read vanilla parent {name}: {exc}")
+                    data = {}
+            self.models[resource] = data
+        return self.models[resource]
+
+
+def minecraft_assets(explicit=None):
+    path = explicit
+    if path is None:
+        properties = (ROOT / "gradle.properties").read_text(encoding="utf-8")
+        version = re.search(r"^neoforge_version\s*=\s*([^\s#]+)", properties, re.MULTILINE)
+        if version:
+            candidate = ROOT / "build/moddev/artifacts" / (
+                f"neoforge-{version.group(1)}-client-extra-aka-minecraft-resources.jar")
+            if candidate.is_file():
+                path = candidate
+    if path is None:
+        print("Vanilla model/texture validation skipped: client resource JAR is not built; "
+              "run the Gradle build or pass --minecraft-resources PATH.")
+        return None
+    try:
+        return VanillaAssets(path)
+    except (OSError, ValueError, zipfile.BadZipFile) as exc:
+        check(False, f"cannot validate Minecraft client resources {path}: {exc}")
+        return None
+
+
+def model_asset_refs(path, data, vanilla):
+    """Check parents, overrides, blockstate models, texture bindings and literal faces."""
+    for node in walk(data):
+        for key in ("parent", "model"):
+            local_ref(node.get(key), "models", ".json")
+            if vanilla:
+                vanilla.ref(node.get(key), "models", ".json", path)
+        textures = node.get("textures", {})
+        values = list(textures.values()) if isinstance(textures, dict) else []
+        values.append(node.get("texture"))
+        for value in values:
+            local_ref(value, "textures", ".png")
+            if vanilla:
+                vanilla.ref(value, "textures", ".png", path)
+
+
+def model_geometry_parents(path, data, json_data, vanilla):
+    """Reject authored elements that ModelBakery would replace with a flat item."""
+    if not data.get("elements"):
+        return
+    model_id = "hoghunter:" + path.relative_to(ASSETS / "models").with_suffix("").as_posix()
+    chain, seen = [model_id], {model_id}
+    parent = data.get("parent")
+    # These standard aliases also catch the observed handheld regression before
+    # Gradle has downloaded native assets. With a JAR, read the actual JSON chain.
+    prebuild_parents = {
+        "minecraft:item/handheld": "minecraft:item/generated",
+        "minecraft:item/generated": "minecraft:builtin/generated",
+    }
+    while isinstance(parent, str) and parent:
+        parent_id = parent if ":" in parent else "minecraft:" + parent
+        chain.append(parent_id)
+        if parent_id in seen:
+            check(False, f"{label(path)}: cyclic model parent chain: {' -> '.join(chain)}")
+            return
+        seen.add(parent_id)
+        if parent_id == "minecraft:builtin/generated":
+            check(False, f"{label(path)}: explicit elements inherit builtin/generated via "
+                  f"{' -> '.join(chain)}; Minecraft replaces this geometry with a generated "
+                  "item model. Use a geometry-preserving parent such as minecraft:block/block.")
+            return
+        namespace, resource = parent_id.split(":", 1)
+        local_path = RES / "assets" / namespace / "models" / (resource + ".json")
+        if local_path in json_data:
+            parent = json_data[local_path].get("parent")
+        elif namespace == "minecraft" and vanilla:
+            parent = vanilla.model(resource, path).get("parent")
+        else:
+            parent = prebuild_parents.get(parent_id)
+    check(True, f"{label(path)}: explicit geometry has no generated-item parent")
+
+
+def java_vanilla_texture_refs(vanilla):
+    # Resolve literal client ResourceLocations and the simple named-material
+    # factory used by HogDetailsLayer, deriving its prefix/suffix from Java.
+    if vanilla is None:
+        return
+    for path in sorted((JAVA / "client").rglob("*.java")):
+        source = path.read_text(encoding="utf-8")
+        for resource in re.findall(r'ResourceLocation\.withDefaultNamespace\("(textures/[^"+]+\.png)"\)', source):
+            vanilla.ref("minecraft:" + resource.removeprefix("textures/").removesuffix(".png"), "textures", ".png", path)
+        factories = re.findall(
+            r'private\s+static\s+ResourceLocation\s+(\w+)\(String\s+(\w+)\)\s*\{\s*'
+            r'return\s+ResourceLocation\.withDefaultNamespace\("(textures/[^"+]*)"\s*\+\s*\2\s*\+\s*"(\.png)"\);', source)
+        for method, _parameter, prefix, suffix in factories:
+            for value in re.findall(r'\b' + re.escape(method) + r'\("([^"+]+)"\)', source):
+                vanilla.ref("minecraft:" + prefix.removeprefix("textures/") + value, "textures", suffix, path)
 
 
 def walk(value):
@@ -230,7 +372,10 @@ def check_jar(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--jar", type=Path, help="also check the exact release JAR against current source resources")
+    parser.add_argument("--minecraft-resources", "--mcjar", type=Path,
+                        help="Minecraft client resource JAR; auto-detected from ModDev after build")
     args = parser.parse_args()
+    vanilla = minecraft_assets(args.minecraft_resources)
     items = registrations("HogItems.java", ["registerItem", "armor", "item", "materialItem"])
     blocks = registrations("HogBlocks.java", ["register", "registerBlock"])
     entities = registrations("HogEntities.java", ["register"])
@@ -254,13 +399,10 @@ def main():
         check(f"entity.hoghunter.{entity}" in lang, f"entity {entity}: missing English display name")
 
     for path, data in json_data.items():
+        if path.is_relative_to(ASSETS / "models") or path.is_relative_to(ASSETS / "blockstates"):
+            model_asset_refs(path, data, vanilla)
         if path.is_relative_to(ASSETS / "models"):
-            local_ref(data.get("parent"), "models", ".json")
-            for value in data.get("textures", {}).values():
-                local_ref(value, "textures", ".png")
-        if path.is_relative_to(ASSETS / "blockstates"):
-            for value in walk(data):
-                local_ref(value.get("model"), "models", ".json")
+            model_geometry_parents(path, data, json_data, vanilla)
         if path.is_relative_to(DATA / "recipe"):
             kind = data.get("type")
             result = data.get("result", {})
@@ -337,6 +479,9 @@ def main():
         raw = path.read_bytes()
         check(len(raw) > 64 and raw[:4] == b"OggS", f"{label(path)}: invalid/truncated OGG file")
     check_template(DATA / "structure/empty.nbt")
+    java_vanilla_texture_refs(vanilla)
+    if vanilla:
+        print(f"Vanilla model/texture references checked: {len(vanilla.references)} distinct assets from {vanilla.path.name}")
     if args.jar:
         check_jar(args.jar)
 

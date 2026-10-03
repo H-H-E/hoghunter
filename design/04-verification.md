@@ -70,6 +70,20 @@ directories, crafting shapes/results, PNG chunk integrity/frame ranges, OGG sign
 GameTest NBT. It is a structural check with an explicit scope; it is not a Minecraft codec runner
 or an image-quality test.
 
+After a build, the verifier also finds ModDev's actual Minecraft client resource JAR and checks
+vanilla model/texture references against its entries. This includes JSON parent/override/texture
+references and the current client Java detail-material paths. Before that resource JAR exists,
+the tool explicitly reports that the vanilla check was skipped. An external client resource JAR
+can be supplied with `--minecraft-resources PATH` (alias `--mcjar`); a pre-build resource pass must
+not be described as proving vanilla asset references. The final `--jar` invocation after `build`
+uses the discovered Minecraft archive automatically.
+
+The verifier also rejects authored model `elements` whose parent chain selects the generated-item
+marker; valid geometry under that marker can otherwise produce a blank inventory item. Local
+parent chains and known generated/handheld aliases are checked even before the Minecraft archive
+is available. The live-client regressions for a missing native quartz texture and blank voxel
+item models both have failing static-check reproductions.
+
 The template path is exactly:
 
 ```text

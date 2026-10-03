@@ -1,6 +1,6 @@
 # Hog Hunter engineering handoff
 
-**Completion pass:** 2026-10-03 (started in the user's local timezone).
+**Completion pass:** 2026-10-03 UTC.
 
 **Target:** Minecraft Java 1.21.1 / NeoForge 21.1.253 / JDK 21 / Gradle 8.12.
 
@@ -13,27 +13,39 @@ entity abilities and persistence, state synchronization, client presentation, re
 verification. It does not turn the larger original mine-campaign plan into a shipped campaign.
 The actual playable scope is ordinary caves plus a craftable extraction/ritual altar.
 
-**Final integration evidence is being collected.** The table below is the release record and must
-be finalized against the last source revision before an artifact is described as release-ready.
-Historical build/server/five-test claims from the earlier handoff are not substituted for new
-verification of changed code.
+The repaired version builds, passes **all 39 required GameTests**, and passes fifteen unattended
+dedicated-server assertions. An actual graphical Minecraft client loaded the packaged JAR and
+displayed the corrected models and synchronized survival HUD. A hosted GitHub Actions run also
+passed on a stock Ubuntu/JDK 21 environment. The remaining limits are full survival/combat
+acceptance, audible listening, and separate authenticated multiplayer, as detailed below.
+
+The results in this handoff come from the new completion pass. Historical build/server/five-test
+claims from the earlier handoff are not substituted for verification of changed code.
 
 ## 1. Verification record
 
-| Command / gate | Current result | Meaning / limit |
+| Command / gate | Recorded result | Evidence / limit |
 |---|---|---|
-| `java -version`; `./gradlew --version` | JDK 21 and Gradle 8.12 available in the execution environment | Build environment required a scratch-only compatibility workaround; details below |
-| `python3 tools/verify_resources.py` | Static resource pass reported during integration | Re-run after final source/resources; does not prove game rendering or codecs |
-| `python3 tools/make_gametest_structure.py --check` | Corrected template generated and independently decoded | Exact checked-in NBT must continue to match generator |
-| `python3 tools/gen_assets.py --manifest tools/assets/manifest.json --out src/main/resources --seed 20261003 --check` | Passed for 52 declared outputs | Compared in a temporary directory; asset-tree hashes unchanged by check |
-| `./gradlew compileJava --no-daemon --console=plain` | Integrated compilation passed; final rerun pending | Against exact target dependencies through the execution environment adapter |
-| `./gradlew build --no-daemon --console=plain` | Integrated build passed; final rerun pending | Final JAR must be rebuilt after all repairs |
-| `./gradlew runData --no-daemon --console=plain` | Integrated datagen bootstrap passed; final rerun pending | Resources are hand-authored; no claim that this alone validates recipes |
-| `./gradlew runGameTestServer --no-daemon --console=plain` | First integrated run: 23/25; Burrower and Lanternback cases under investigation | This is a failed gate until every required test passes |
-| `python3 tools/smoke_server.py --timeout 240` | First run passed fourteen assertions and clean exit 0; final six-block rerun pending | Dedicated development server, not a separate packaged-JAR installation |
-| `python3 tools/verify_resources.py --jar build/libs/hoghunter-0.1.0.jar` | Final result pending | Must inspect the JAR rebuilt from final source |
-| `./gradlew runClient` and real-client scenarios | Unverified until a usable graphics/audio run is recorded | Server tests cannot establish visuals, controls, HUD delivery, or audibility |
-| `.github/workflows/verify.yml` | Workflow configured | Remote execution is not implied by committing a workflow |
+| `java -version`; `./gradlew --version` | Passed: JDK 21 / Gradle 8.12 | Local environment adaptation is documented below; hosted CI used the stock upstream toolchain |
+| `python3 tools/verify_resources.py` | Passed | 30 registered items, six blocks, seven species, 26 sounds, and 144 JSON resources; structural checks are not gameplay tests |
+| `python3 tools/make_gametest_structure.py --check` | Passed | Deterministic 33 × 8 × 33 template, independently decoded; exact generated NBT matches the committed file |
+| `python3 tools/gen_assets.py --manifest tools/assets/manifest.json --out src/main/resources --seed 20261003 --check` | Passed for 52 declared outputs | Regenerated in a temporary directory; original asset-tree hashes unchanged by the check |
+| `./gradlew compileJava --no-daemon --console=plain` | Passed; final `build` also executed `compileJava` | `integrated/compile-1`, `integrated/build-release`, and the hosted CI run |
+| `./gradlew build --no-daemon --console=plain` | Passed, exit 0 | `integrated/build-release`; rebuilt after the final client Java/model/armor repairs |
+| `./gradlew runData --no-daemon --console=plain` | Passed, exit 0 | `integrated/datagen-2` and hosted CI; **zero datagen providers**, so this is bootstrap evidence |
+| `./gradlew runGameTestServer --no-daemon --console=plain` | All **39/39 required tests passed**, exit 0 | `integrated/gametest-4` and hosted CI; controlled server behavior, not a full survival playthrough |
+| `python3 tools/smoke_server.py --timeout 240` | All **15 assertions passed**, clean exit 0 | `integrated/server-2` and hosted CI: readiness, seven species, incoming damage, and six blocks on a dedicated development server |
+| `python3 tools/verify_resources.py --jar build/libs/hoghunter-0.1.0.jar` | Passed on the final local JAR | `integrated/jar-resources-release.log`; current resource bytes/class presence and 24 native model/texture assets checked against the real Minecraft resource archive |
+| Actual client, including packaged-JAR launches | Observed scenarios passed; packaged save/stop verified | `integrated/client-2`, `integrated/client-final`, and `integrated/client-release`; exact scope below, with OpenAL null output |
+| Hosted clean-checkout CI | All steps passed on commit `4dd3fc8c4aab31a55c0b4e0f5dcce453940228ff` | [Run 37161739823](https://github.com/H-H-E/hoghunter/actions/runs/37161739823), using ordinary hosted Ubuntu/JDK 21 and unmodified upstream tools |
+
+The stock hosted run establishes clean-checkout toolchain support independently of the local
+workaround. Subsequent source revisions are checked by the same
+[verification workflow](https://github.com/H-H-E/hoghunter/actions/workflows/verify.yml). The final
+delivery's evidence JSON records its exact concluding commit/run rather than treating an earlier
+candidate as proof of later changes.
+
+### Local toolchain adaptation
 
 The build environment used official Eclipse Temurin **21.0.12.1+1-LTS** and the repository's
 Gradle **8.12** wrapper. Normal NeoFormRuntime 1.0.40 bootstrap failed before mod compilation
@@ -51,19 +63,64 @@ bash gradlew -I <external-nfrt-portability.init.gradle> <task> --stacktrace --no
 
 The portability patch and before/after hashes are recorded as
 `nfrt-java-home-fallback.patch` and `nfrt-portability-record.json` in the accompanying verification
-evidence. The proxy truststore/launcher were also external environment setup. A stock
-clean-checkout run through the configured CI workflow remains distinct from these adapted runs.
+evidence. The proxy truststore/launcher were also external environment setup. These adapted local
+runs and the passed stock hosted run are separate, explicitly identified evidence.
 
-Full logs, exact launcher/arguments, process exit codes, and JAR hash should accompany the final
-record. Initial evidence labels are `integrated/compile-1`, `build-1`, `datagen-1`, `gametest-1`,
-and `server-1`; later final runs supersede them. The dedicated helper writes an isolated world plus `verification/server/server.log`,
-`commands.txt`, and `assertions.json`; it never resets an existing development world.
+The evidence directories contain full logs, exact launcher arguments, and exit codes. Earlier
+integration attempts remain in the evidence history; the successful labels above supersede them.
+The dedicated helper writes an isolated world plus `verification/server/server.log`, `commands.txt`,
+and `assertions.json`; it never resets an existing development world.
 
-Reviewed runtime warnings include the offline test environment's failed authentication-key DNS
-lookup at `api.minecraftservices.com` and vanilla command-teleport ambiguity warnings. These did
-not prevent the isolated offline server from passing its command assertions. They are not
-evidence of working authenticated multiplayer, and mod registry/data/network errors must not be
-hidden in that warning allowance.
+### Packaged artifact and client observations
+
+The final local build produced `hoghunter-0.1.0.jar`, **337,906 bytes**, with SHA-256:
+
+```text
+659b11159e28f966b6bd0066a5821b7931da886c8a4071e2440b3af3c32db788
+```
+
+`integrated/release-artifacts.json` records the binary and source-JAR hashes. The release client copied
+this exact binary into an isolated `mods` directory, cleared the exploded ModDev mod source
+mapping, and entered a saved world. The launch configuration and hash are recorded in
+`integrated/client-release/session.json`. The preceding packaged run's
+`integrated/client-final/launch-evidence/packaged-load-proof.json` also records captured launch
+files without exploded mod paths. These clients used a real 1280 × 720 Xvfb/Mesa llvmpipe OpenGL
+context. The packaged save/stop run saved all dimensions and exited cleanly with code 0; session
+and status records identify each individual invocation.
+
+The inspected client captures establish:
+
+- All seven entities render with grounded geometry and visible species details; all thirty item
+  icons and all six block models are visible after the model fixes.
+- The final worn hoghide set has complete brown leather coverage, and the harness has aligned iron
+  chest/shoulder coverage. They retain custom stats and use native layers; old generated armor
+  PNGs remain provenance resources rather than worn textures.
+- The held silver gun and dark/lit lantern models render. A real gun-use click changed the HUD
+  ammunition from 32 to 31, and the lantern click changed state, model core, feedback, and subtitle.
+- The survival HUD shows live BPM, oil, ammunition, wounds, and fractures. It hides with F1;
+  the final GUI-scale-3 capture keeps it below the Rootmother bar without overlap.
+- Ordinary damage commands produce visible injuries and reduced maximum health, and saving and
+  reopening the world preserves the recorded state. A fracture-two movement check showed no
+  idle drift and no material speed increase from holding the sprint key while walking.
+
+`integrated/client-2/movement.json` records three-second distances of 0 blocks while idle,
+10.148 while walking, and 10.356 while holding walk plus sprint. This is a bounded integrated-client
+check, not a latency or every-input-mode guarantee. `audio-dispatch.json` records all 26 sound
+events dispatched without matching unknown/unavailable sound warnings.
+
+The gallery uses `NoAI` entities. It proves model visibility, not every walk/attack/death animation.
+The client used **OpenAL null output**: subtitles and playback dispatch were observed, but no
+human listening pass is claimed. The packaged run used an integrated server; it is not a separate
+authenticated multiplayer acceptance run. Full progression without commands, live ability
+counterplay, balance, and audio listening remain the scenarios in [`RELEASE_CHECKS.md`](RELEASE_CHECKS.md).
+
+Reviewed runtime warnings include failed offline authentication/profile DNS lookups at
+`api.minecraftservices.com` and `sessionserver.mojang.com`, vanilla command-teleport ambiguity,
+the development pack's `union:` resource schema, and vanilla shader/goat-horn warnings. An initial
+client test-options error set simulation distance to three; the final launcher uses five. A real
+missing silver-gun texture and blank voxel item models were repaired and checked again rather
+than classified as environmental warnings. No authenticated multiplayer claim follows from the
+offline runs, and a warning review is not permission to ignore mod registry/data/network errors.
 
 ## 2. Important defects found and repaired
 
@@ -83,6 +140,14 @@ hidden in that warning allowance.
 The malformed baseline template is an observation about the inspected files. It does not by
 itself establish what a historical test invocation did in another checkout or runtime directory.
 The newly executed gates are the basis for this handoff.
+
+The real client also caught two issues that structural reference checks initially missed: a
+nonexistent vanilla `quartz_block` texture name and explicit voxel elements inheriting a generated
+item parent. They now use a real texture and a geometry-preserving parent. The verifier checks
+actual Minecraft asset names and generated-marker ancestry, with failing reproductions for both
+regressions. A GUI-scale-3 boss-bar overlap was likewise corrected and checked on the packaged run.
+Worn armor inspection found unusable coverage in the original generated armor artwork; explicit
+native leather/iron layers now provide aligned coverage, and hoghide has the vanilla dyeable tag.
 
 ## 3. Survival route and controls
 
@@ -110,12 +175,12 @@ Exact mechanics, default numbers, and the limits compared with the original plan
 The implemented route uses ordinary caves and player-built rooms. It does not include a generated
 five-floor mine/camp, authored quest/safe-room/scare templates, a separate stalk director, a
 magazine/reload or blueprint interface, placed/thrown radius-light lanterns, root vents, or camp
-fast travel. These were broader design ambitions, not secretly working systems in the baseline.
+fast travel. Those broader design ambitions are outside the implemented version.
 
-The remaining acceptance work is practical: verify final automated gates on the final revision,
-run the real-client scenarios, listen to the audio, and complete a normal survival playthrough to
-assess difficulty/drop/fuel pacing. A client launch without visible errors is still weaker than
-that playthrough. See [`RELEASE_CHECKS.md`](RELEASE_CHECKS.md).
+The remaining acceptance work is practical: play the live combat and deep ritual scenarios,
+listen to the audio, connect a separate authenticated multiplayer client, and complete a normal
+survival playthrough to assess difficulty/drop/fuel pacing. The observed client checks are useful
+evidence but do not replace that playthrough. See [`RELEASE_CHECKS.md`](RELEASE_CHECKS.md).
 
 ## 5. Maintenance map and invariants
 
@@ -141,9 +206,10 @@ references/formats before launch; the latter checks actual server behavior. The 
 covers the declared procedural PNG/metadata/OGG subset, not all runtime JSON. Its recorded authoring
 toolchain is the reproducibility reference.
 
-## 6. Before publishing a binary
+## 6. Release maintenance
 
-Use [`design/04-verification.md`](../design/04-verification.md), collect final evidence, and update
-section 1. Publish a JAR only when its final build succeeds. A source ZIP is an honest fallback
-when a target environment or remote write is unavailable; label its actual verification state.
-Do not call a configured CI workflow, an old JAR, or an unexecuted test a passing release gate.
+After source changes, use [`design/04-verification.md`](../design/04-verification.md), rebuild the
+binary, retain the matching evidence, and update this record. Pair distributed artifacts with
+their actual commit, SHA-256, and workflow result. A source ZIP remains a useful fallback when a
+remote write is unavailable, provided its verification state is clear. A configured workflow,
+an old JAR, or an unexecuted test is never a replacement for an executed gate.

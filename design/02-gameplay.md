@@ -91,8 +91,10 @@ scales positive stress; it does not let the client choose a target BPM.
 At 120 BPM, mining speed is reduced ten percent. At 140 BPM, sprinting causes additional food
 exhaustion. Reaching 180 BPM starts a three-second sprint lock and emits thirty noise, with a
 cooldown to prevent a permanent panic retrigger loop. Client heartbeat and screen feedback follow
-the mirrored state. The earlier planned accuracy cone, random stagger, and every specified
-hallucination animation are not assumed present merely because a BPM threshold exists.
+the mirrored state. The client also applies sprint locks before movement prediction while
+preserving normal walking, strafe, and swimming input. The earlier planned accuracy cone, random
+stagger, and every specified hallucination animation are not assumed present merely because a
+BPM threshold exists.
 
 Sanity falls one point per ten seconds below Y=16 while oil is at most ten. It recovers in a bright
 surface location and through extraction. At zero it returns to fifteen, increases heart rate, and
@@ -193,8 +195,10 @@ server; line-of-sight ray tests prevent hits through solid walls. Armor piercing
 combat behavior rather than an ignored argument.
 
 The four registered armor ids are `hoghide_helmet`, `hoghide_chestplate`, `hoghide_leggings`, and
-`hoghide_boots`. Their defense is 1/3/2/1 with dedicated material/texture wiring. The ironback
+`hoghide_boots`. Their defense is 1/3/2/1 with a custom armor material. The ironback
 harness is a five-defense chestpiece with 0.1 knockback resistance and increased sprint noise.
+Worn hoghide uses dyeable native leather layers; the harness uses native iron layers. Those
+appearance choices preserve the mod's armor stats, durability, repair ingredients, and registry ids.
 
 ## 6. Current scope limits
 

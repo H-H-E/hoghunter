@@ -14,7 +14,7 @@ Client resources are under `src/main/resources/assets/hoghunter`:
 | `models/block/` | Cube, gate frame, nest, altar, snare, and salt geometry |
 | `models/item/` | Inventory/held models for registered items and block items |
 | `textures/entity/hog/` | Seven hog skin strips and retained procedural source textures |
-| `textures/models/armor/` | Hoghide material's humanoid armor layers |
+| `textures/models/armor/` | Retained original procedural armor artwork; worn armor uses native layers |
 | `textures/block/`, `textures/item/` | Procedural block and inventory artwork |
 | `textures/gui/` | Blood-edge and vignette overlays |
 | `textures/particle/`, `particles/` | Authored particle resources; see active-particle scope below |
@@ -71,14 +71,27 @@ Ordinary inventory icons use `minecraft:item/generated` or `minecraft:item/handh
 refer to the matching block/inventory model. Do not use the newer 1.21.4 item-definition format
 for this target.
 
+Authored three-dimensional item `elements` use `minecraft:block/block` as their base. A generated
+or handheld parent ultimately selects the built-in generated-item marker, which discards those
+elements and can leave a blank icon when no generated texture layer exists. The verifier checks
+the parent chain to catch this exact failure. Keep the explicit GUI and held-item transforms for
+guns, harpoon, containers, and lantern when editing their geometry.
+
 The field lantern has a small three-dimensional frame and a dark/lit core model override. Its
 client item predicate follows synchronized toggle, fuel, and blackout state. This changes the
 item's appearance; it is not a world-light emitter.
 
-Hoghide and ironback armor materials are registered by `HogItems`. They reference the custom
-`hoghunter:hoghide` armor layer instead of silently rendering as vanilla leather. The committed
-textures use the 64 × 32 humanoid layout: layer 1 serves helmet/chest/boots, and layer 2 serves
-leggings. Inventory armor icons are separate models/textures.
+Hoghide and ironback armor materials are registered by `HogItems` with their own gameplay stats,
+durability, and repair ingredients. Worn hoghide explicitly uses vanilla leather layers, and the
+ironback harness uses vanilla iron layers. The four hoghide items belong to
+`data/minecraft/tags/item/dyeable.json`, giving them normal brown leather color and vanilla
+dyeing behavior. Native humanoid layers provide complete, aligned equipment coverage.
+
+The original generated `hoghide_layer_1.png` and `hoghide_layer_2.png` remain in the procedural
+manifest for provenance/reproducibility. They are not the worn armor textures: client inspection
+showed that their retained rectangle artwork did not form a usable humanoid skin layout. Inventory
+armor icons are separate models/textures. Layer 1 serves helmet/chest/boots, and layer 2 serves
+leggings in the native armor rendering path.
 
 ## 4. Sound and horror presentation
 
@@ -152,7 +165,10 @@ python3 tools/make_gametest_structure.py --check
 The standard-library verifier discovers registration ids and checks relevant models, blockstates,
 loot, names, local references, recipe shapes/results, singular data paths, sound mappings and
 subtitles, PNG integrity/frame ranges, OGG signatures, and independently decoded GameTest NBT.
-After a successful final build, also check the exact JAR:
+After a build it also checks native Minecraft model/texture references against the actual client
+resource JAR produced by ModDev. That optional stage is explicitly skipped before the Minecraft
+resource archive exists; `--minecraft-resources PATH` can select an archive directly. After a
+successful final build, also check the exact mod JAR:
 
 ```bash
 python3 tools/verify_resources.py --jar build/libs/hoghunter-0.1.0.jar

@@ -16,6 +16,7 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.minecraft.client.Minecraft;
@@ -65,6 +66,9 @@ public final class HogClient {
         event.registerBelowAll(HogHunterMod.id("horror_effects"), HogHud::renderEffects);
         event.registerAboveAll(HogHunterMod.id("survival_status"), HogHud::renderStatus);
     }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void bossBar(CustomizeGuiOverlayEvent.BossEventProgress event) { HogHud.trackBossBar(event); }
 
     @SubscribeEvent
     public static void loggingIn(ClientPlayerNetworkEvent.LoggingIn event) { resetSession(); }

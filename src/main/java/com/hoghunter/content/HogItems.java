@@ -15,6 +15,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.ArmorMaterials;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -31,9 +32,9 @@ public final class HogItems {
     public static final DeferredRegister<ArmorMaterial> ARMOR_MATERIALS =
             DeferredRegister.create(Registries.ARMOR_MATERIAL, HogHunterMod.MOD_ID);
     public static final Holder<ArmorMaterial> HOGHIDE_MATERIAL = ARMOR_MATERIALS.register("hoghide", () ->
-            material(3, 0.0F, () -> Ingredient.of(Items.LEATHER)));
+            material(3, 0.0F, () -> Ingredient.of(Items.LEATHER), ArmorMaterials.LEATHER.value().layers()));
     public static final Holder<ArmorMaterial> IRONBACK_MATERIAL = ARMOR_MATERIALS.register("ironback", () ->
-            material(5, 0.1F, () -> Ingredient.of(HogItems.IRON_PLATE.get())));
+            material(5, 0.1F, () -> Ingredient.of(HogItems.IRON_PLATE.get()), ArmorMaterials.IRON.value().layers()));
 
     public static final DeferredItem<Item> SALT = materialItem("salt");
     public static final DeferredItem<Item> PURIFIED_TUSK = materialItem("purified_tusk");
@@ -86,11 +87,11 @@ public final class HogItems {
     }
 
     private static ArmorMaterial material(int chestArmor, float knockback,
-                                           java.util.function.Supplier<Ingredient> repair) {
+                                           java.util.function.Supplier<Ingredient> repair, List<ArmorMaterial.Layer> layers) {
         return new ArmorMaterial(Map.of(ArmorItem.Type.HELMET, 1, ArmorItem.Type.CHESTPLATE, chestArmor,
                 ArmorItem.Type.LEGGINGS, 2, ArmorItem.Type.BOOTS, 1, ArmorItem.Type.BODY, chestArmor),
                 15, SoundEvents.ARMOR_EQUIP_LEATHER, repair,
-                List.of(new ArmorMaterial.Layer(HogHunterMod.id("hoghide"))), 0.0F, knockback);
+                layers, 0.0F, knockback);
     }
 
     private static DeferredItem<Item> materialItem(String id) {

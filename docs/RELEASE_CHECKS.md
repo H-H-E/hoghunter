@@ -8,7 +8,8 @@ hash, client/server versions, commands, screenshots, client log, and observed re
 
 Launch the client and enter a world. Open the Hog Hunter creative tab and inspect every item and
 block: readable English names, visible inventory models, coherent armor textures, and no missing
-purple/black textures. Equip all four hoghide pieces and the harness.
+purple/black textures. Equip all four hoghide pieces and the harness: hoghide should have complete
+brown leather coverage and accept ordinary leather dyeing; the harness should use iron layers.
 
 Run the commands in [`cmds.txt`](../cmds.txt) one line at a time, **adding `/` in the chat box**.
 They replace a small test area and place the seven entities on a platform. A player must already
@@ -70,6 +71,9 @@ placement denial, and no indefinite salt-item farming.
 Take controlled damage/fall injury in the test world. Verify wound max-health loss, fracture speed
 loss, sprint lock at severity two, and capped bleed. Use bandages, splints, and a medkit. Interrupt
 a treatment with movement/sprinting/damage and confirm invalid treatments do not consume supplies.
+During a sprint lock, test both the held sprint key and double-tap forward, then repeat with toggle
+sprint enabled. Walking, strafing, and ordinary swimming must remain usable; sprint must resume
+normally after the lock ends.
 
 Complete the surface altar sequence with actual ingredients. Attempt each step once with missing
 materials first; the error must explain the next requirement and leave inventory/tier unchanged.

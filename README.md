@@ -4,10 +4,9 @@ A survival-horror mod for **Minecraft Java Edition 1.21.1**, **NeoForge 21.1.253
 Hunt seven corrupted hog species in Overworld caves, manage heartbeat, noise, injuries, and
 lantern fuel, extract evidence, then offer three marked tusks to face Rootmother.
 
-**Development version:** implemented source and verified behavior are different things. Read
-[`docs/HANDOFF.md`](docs/HANDOFF.md) for the actual build/test results and remaining verification
-limits. The earlier repository's claim of a feature-complete release and five passing tests is not
-used as evidence for this completion pass.
+**Version 0.1.0** provides a cave-hunting and altar-progression loop. Read
+[`docs/HANDOFF.md`](docs/HANDOFF.md) for the executed build, server, GameTest, and client checks,
+including the remaining survival-playtesting and environment limits.
 
 ## Build and run
 
@@ -93,7 +92,8 @@ be placed or thrown. Rootmother blackout temporarily disables its effect without
 
 Salt is a real material: smelt a dried kelp block into four salt. A hook tooth, salt, and an amethyst
 shard produce a purified tusk. The four armor registry ids are `hoghide_*`; the harness upgrades
-the chestplate with actual iron plates.
+the chestplate with actual iron plates. Hoghide uses dyeable leather appearance and the harness
+uses iron appearance, with their own gameplay stats.
 
 ## The hogs
 
@@ -108,9 +108,8 @@ the chestplate with actual iron plates.
 | `rootmother` — Rootmother | Reinforcement calls, a frontal sweep, a boss bar, and a fuel-preserving blackout |
 
 Five species spawn naturally. Screechers join encounters; Rootmother requires the ritual. Hogs
-can acquire targets through sight, scent, or noise. Their ability tells, treatment feedback, and
-HUD are subject to the real-client acceptance checks below; static assets alone do not prove the
-presentation works.
+can acquire targets through sight, scent, or noise. The verification record distinguishes the
+observed client gallery/HUD from live ability, audio, and survival acceptance scenarios.
 
 ## Verification and project layout
 
@@ -127,8 +126,8 @@ Minecraft 1.21.1 server data uses singular `recipe`, `loot_table`, `tags/item`, 
 `structure` directories. `tools/` contains the asset/template generators and resource verifier.
 
 Enemy/fuel/pressure settings and visual/audio intensity are bounded in `HogHunterConfig` and saved
-as NeoForge world server configuration. A full release still requires an actual client playthrough,
-audio listening, and a successful build/runtime record for the final source.
+as NeoForge world server configuration. A fresh survival playthrough remains the practical test of
+encounter distribution, difficulty, drop rates, and fuel pacing.
 
 ## License
 

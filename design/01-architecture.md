@@ -57,7 +57,7 @@ Development runs have separate working directories:
 | `item/`, `block/` | Actual use, placement, treatment, combat, traps, progression interactions |
 | `worldgen/` | Generation predicates and the Rootmother arena path |
 | `net/` | Wire payloads and server-to-client state transport |
-| `client/`, `client/model/` | Client mirror, HUD, audio, renderer and model layers |
+| `client/`, `client/model/` | Client mirror, sprint prediction, HUD, audio, renderer and model layers |
 | `test/` | GameTests loaded by the dedicated test run |
 | `tools/` | Asset/template authoring and static resource verification |
 
@@ -119,6 +119,11 @@ Common classes must load on a dedicated server without resolving `net.minecraft.
 Renderer, `Minecraft`, input, and GUI dependencies stay in the `client` package behind a physical
 client entrypoint. Wire records use common types only. A successful client startup does not prove
 this boundary; a dedicated-server launch is a separate check.
+
+`HogClientInput` mirrors server sprint locks before local movement prediction. It temporarily
+suppresses the sprint key and double-tap transition for that tick, then restores the key state;
+normal movement input still refreshes before travel. The server remains authoritative. Keep the
+hold/toggle preference and ordinary forward/strafe speed intact when changing this path.
 
 ## Server data paths
 

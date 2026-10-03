@@ -39,7 +39,9 @@ jobs:
       - name: Dedicated server commands
         run: python3 tools/smoke_server.py --timeout 240
       - name: Check exact JAR resources
-        run: python3 tools/verify_resources.py --jar build/libs/hoghunter-0.1.0.jar
+        run: |
+          python3 tools/verify_resources.py --jar build/libs/hoghunter-0.1.0.jar
+          sha256sum build/libs/hoghunter-0.1.0.jar
       - name: Collect build and verification evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

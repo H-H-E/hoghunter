@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "hoghunter:hoghide_helmet",
+    "hoghunter:hoghide_chestplate",
+    "hoghunter:hoghide_leggings",
+    "hoghunter:hoghide_boots"
+  ]
+}

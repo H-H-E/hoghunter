@@ -11,6 +11,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
 
 /** Scaled GUI coordinates, numeric values and words keep survival feedback legible. */
 final class HogHud {
@@ -21,6 +22,7 @@ final class HogHud {
     private static final int DANGER = 0xFFFF8F89;
     private static final ResourceLocation VIGNETTE = HogHunterMod.id("textures/gui/hog_hunter_vignette.png");
     private static final ResourceLocation BLOOD = HogHunterMod.id("textures/gui/hog_hunter_blood_edges.png");
+    private static int bossBarBottom;
 
     private HogHud() {}
 
@@ -38,7 +40,7 @@ final class HogHud {
         int injuryRows = (HogClientState.wounds() > 0 ? 1 : 0) + (HogClientState.fracture() > 0 ? 1 : 0);
         int lockRows = HogClientState.sprintLockTicks() > 0 ? 1 : 0;
         int height = 96 + (injuryRows + lockRows) * 12;
-        int x = 6, y = 6;
+        int x = 6, y = Math.max(6, bossBarBottom + 6);
         graphics.fill(x, y, x + width, y + height, 0xBC101318);
         graphics.fill(x, y, x + 2, y + height, heartColor());
         int left = x + 8, right = x + width - 7, inner = right - left;
@@ -70,6 +72,8 @@ final class HogHud {
     }
 
     static void renderEffects(GuiGraphics graphics, DeltaTracker delta) {
+        // This layer runs before vanilla boss bars; the status layer runs after them.
+        bossBarBottom = 0;
         Minecraft minecraft = Minecraft.getInstance();
         if (!visible(minecraft) || minecraft.player.isCreative()) return;
         float intensity = HogHunterConfig.HORROR_VISUAL_INTENSITY.get().floatValue()
@@ -84,6 +88,19 @@ final class HogHud {
             int alpha = (int) (Math.min(1, HogClientState.blackoutTicks() / 10F) * 95 * intensity);
             graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), alpha << 24);
         }
+    }
+
+    static void trackBossBar(CustomizeGuiOverlayEvent.BossEventProgress event) {
+        int guiWidth = event.getGuiGraphics().guiWidth();
+        int panelRight = 6 + Math.min(158, guiWidth - 12);
+        int nameWidth = Minecraft.getInstance().font.width(event.getBossEvent().getName());
+        int nameLeft = guiWidth / 2 - nameWidth / 2;
+        int left = Math.min(event.getX(), nameLeft);
+        int right = Math.max(event.getX() + 182, nameLeft + nameWidth);
+        // Vanilla draws a five-pixel bar at the event's y and its name above it.
+        // Track each actual bar so narrow windows also handle several active bosses.
+        if (left < panelRight + 6 && right > 0)
+            bossBarBottom = Math.max(bossBarBottom, event.getY() + 5);
     }
 
     private static void overlay(GuiGraphics graphics, ResourceLocation texture, float opacity) {

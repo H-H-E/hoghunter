@@ -1,5 +1,5 @@
 {
-  "parent": "minecraft:item/handheld",
+  "parent": "minecraft:block/block",
   "gui_light": "front",
   "textures": {
     "case": "minecraft:block/white_wool",
