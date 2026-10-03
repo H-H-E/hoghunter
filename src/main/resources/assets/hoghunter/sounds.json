@@ -1,6 +1,274 @@
 {
-  "entity.boar_hog.ambient": {"sounds":[{"name":"hoghunter:entity/boar_hog/ambient_01","volume":0.8}],"subtitle":"subtitles.hoghunter.entity.boar_hog.ambient"},
-  "entity.boar_hog.attack": {"sounds":[{"name":"hoghunter:entity/boar_hog/attack","volume":1.0}],"subtitle":"subtitles.hoghunter.entity.boar_hog.attack"},
-  "entity.boar_hog.squeal": {"sounds":[{"name":"hoghunter:entity/boar_hog/squeal","volume":0.9}],"subtitle":"subtitles.hoghunter.entity.boar_hog.squeal"},
-  "block.ritual_altar.activate": {"sounds":[{"name":"hoghunter:block/ritual_altar/activate","volume":0.7}],"subtitle":"subtitles.hoghunter.block.ritual_altar.activate"}
+  "bolt_fire": {
+    "subtitle": "subtitles.hoghunter.bolt_fire",
+    "sounds": [
+      {
+        "name": "minecraft:item.crossbow.shoot",
+        "volume": 0.9,
+        "pitch": 0.8,
+        "type": "event"
+      }
+    ]
+  },
+  "lantern_toggle": {
+    "subtitle": "subtitles.hoghunter.lantern_toggle",
+    "sounds": [
+      {
+        "name": "minecraft:item.flintandsteel.use",
+        "volume": 0.6,
+        "pitch": 0.85,
+        "type": "event"
+      }
+    ]
+  },
+  "block.baited_snare.set": {
+    "subtitle": "subtitles.hoghunter.block.baited_snare.set",
+    "sounds": [
+      {
+        "name": "minecraft:block.tripwire.attach",
+        "volume": 0.8,
+        "pitch": 0.8,
+        "type": "event"
+      }
+    ]
+  },
+  "block.baited_snare.trigger": {
+    "subtitle": "subtitles.hoghunter.block.baited_snare.trigger",
+    "sounds": [
+      {
+        "name": "minecraft:block.iron_trapdoor.close",
+        "volume": 0.9,
+        "pitch": 0.7,
+        "type": "event"
+      }
+    ]
+  },
+  "block.salt_line.place": {
+    "subtitle": "subtitles.hoghunter.block.salt_line.place",
+    "sounds": [
+      {
+        "name": "minecraft:block.sand.place",
+        "volume": 0.7,
+        "pitch": 1.2,
+        "type": "event"
+      }
+    ]
+  },
+  "block.root_altar.activate": {
+    "subtitle": "subtitles.hoghunter.block.root_altar.activate",
+    "sounds": [
+      {
+        "name": "hoghunter:block/ritual_altar/activate",
+        "volume": 0.85,
+        "pitch": 0.7
+      }
+    ]
+  },
+  "player.heartbeat": {
+    "subtitle": "subtitles.hoghunter.player.heartbeat",
+    "sounds": [
+      {
+        "name": "minecraft:entity.warden.heartbeat",
+        "volume": 0.5,
+        "pitch": 1.1,
+        "type": "event"
+      }
+    ]
+  },
+  "entity.boar_hog.ambient": {
+    "subtitle": "subtitles.hoghunter.entity.boar_hog.ambient",
+    "sounds": [
+      {
+        "name": "hoghunter:entity/boar_hog/ambient_01",
+        "volume": 0.6,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "entity.hog.hurt": {
+    "subtitle": "subtitles.hoghunter.entity.hog.hurt",
+    "sounds": [
+      {
+        "name": "hoghunter:entity/boar_hog/squeal",
+        "volume": 0.9,
+        "pitch": 1.05
+      }
+    ]
+  },
+  "entity.hog.death": {
+    "subtitle": "subtitles.hoghunter.entity.hog.death",
+    "sounds": [
+      {
+        "name": "hoghunter:entity/boar_hog/squeal",
+        "volume": 0.9,
+        "pitch": 0.65
+      }
+    ]
+  },
+  "entity.boar_hog.windup": {
+    "subtitle": "subtitles.hoghunter.entity.boar_hog.windup",
+    "sounds": [
+      {
+        "name": "hoghunter:entity/boar_hog/ambient_01",
+        "volume": 0.95,
+        "pitch": 0.7
+      }
+    ]
+  },
+  "entity.boar_hog.attack": {
+    "subtitle": "subtitles.hoghunter.entity.boar_hog.attack",
+    "sounds": [
+      {
+        "name": "hoghunter:entity/boar_hog/attack",
+        "volume": 1.0,
+        "pitch": 0.9
+      }
+    ]
+  },
+  "entity.spore_hog.windup": {
+    "subtitle": "subtitles.hoghunter.entity.spore_hog.windup",
+    "sounds": [
+      {
+        "name": "minecraft:block.slime_block.step",
+        "volume": 0.8,
+        "pitch": 0.55,
+        "type": "event"
+      }
+    ]
+  },
+  "entity.spore_hog.release": {
+    "subtitle": "subtitles.hoghunter.entity.spore_hog.release",
+    "sounds": [
+      {
+        "name": "minecraft:entity.splash_potion.break",
+        "volume": 0.8,
+        "pitch": 0.75,
+        "type": "event"
+      }
+    ]
+  },
+  "entity.hook_hog.windup": {
+    "subtitle": "subtitles.hoghunter.entity.hook_hog.windup",
+    "sounds": [
+      {
+        "name": "minecraft:block.chain.place",
+        "volume": 0.9,
+        "pitch": 0.7,
+        "type": "event"
+      }
+    ]
+  },
+  "entity.hook_hog.pull": {
+    "subtitle": "subtitles.hoghunter.entity.hook_hog.pull",
+    "sounds": [
+      {
+        "name": "minecraft:block.chain.break",
+        "volume": 1.0,
+        "pitch": 0.65,
+        "type": "event"
+      }
+    ]
+  },
+  "entity.screecher_hog.windup": {
+    "subtitle": "subtitles.hoghunter.entity.screecher_hog.windup",
+    "sounds": [
+      {
+        "name": "hoghunter:entity/boar_hog/ambient_01",
+        "volume": 0.9,
+        "pitch": 1.25
+      }
+    ]
+  },
+  "entity.screecher_hog.screech": {
+    "subtitle": "subtitles.hoghunter.entity.screecher_hog.screech",
+    "sounds": [
+      {
+        "name": "hoghunter:entity/boar_hog/squeal",
+        "volume": 1.0,
+        "pitch": 1.45
+      }
+    ]
+  },
+  "entity.ironback_hog.deflect": {
+    "subtitle": "subtitles.hoghunter.entity.ironback_hog.deflect",
+    "sounds": [
+      {
+        "name": "minecraft:block.anvil.land",
+        "volume": 0.55,
+        "pitch": 1.15,
+        "type": "event"
+      }
+    ]
+  },
+  "entity.mire_hog.shift": {
+    "subtitle": "subtitles.hoghunter.entity.mire_hog.shift",
+    "sounds": [
+      {
+        "name": "minecraft:entity.enderman.teleport",
+        "volume": 0.55,
+        "pitch": 0.65,
+        "type": "event"
+      }
+    ]
+  },
+  "entity.rootmother.windup": {
+    "subtitle": "subtitles.hoghunter.entity.rootmother.windup",
+    "sounds": [
+      {
+        "name": "hoghunter:block/ritual_altar/activate",
+        "volume": 0.85,
+        "pitch": 0.5
+      }
+    ]
+  },
+  "entity.rootmother.sweep": {
+    "subtitle": "subtitles.hoghunter.entity.rootmother.sweep",
+    "sounds": [
+      {
+        "name": "hoghunter:entity/boar_hog/attack",
+        "volume": 1.0,
+        "pitch": 0.55
+      }
+    ]
+  },
+  "entity.rootmother.summon": {
+    "subtitle": "subtitles.hoghunter.entity.rootmother.summon",
+    "sounds": [
+      {
+        "name": "hoghunter:entity/boar_hog/ambient_01",
+        "volume": 0.95,
+        "pitch": 0.5
+      }
+    ]
+  },
+  "entity.rootmother.blackout": {
+    "subtitle": "subtitles.hoghunter.entity.rootmother.blackout",
+    "sounds": [
+      {
+        "name": "hoghunter:block/ritual_altar/activate",
+        "volume": 0.85,
+        "pitch": 0.4
+      }
+    ]
+  },
+  "entity.boar_hog.squeal": {
+    "subtitle": "subtitles.hoghunter.entity.boar_hog.squeal",
+    "sounds": [
+      {
+        "name": "hoghunter:entity/boar_hog/squeal",
+        "volume": 0.9,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "block.ritual_altar.activate": {
+    "subtitle": "subtitles.hoghunter.block.ritual_altar.activate",
+    "sounds": [
+      {
+        "name": "hoghunter:block/ritual_altar/activate",
+        "volume": 0.7,
+        "pitch": 1.0
+      }
+    ]
+  }
 }

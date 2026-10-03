@@ -42,7 +42,7 @@ public final class HogHunterGameTests {
 
     @GameTest(templateNamespace = "hoghunter", template = "empty", timeoutTicks = 100, setupTicks = 1, required = true)
     public static void hogAiTicks(GameTestHelper helper) {
-        HogEntity hog = helper.spawn(HogEntities.BOAR_HOG.get(), new BlockPos(0, 1, 0));
+        HogEntity hog = helper.spawn(HogEntities.BOAR_HOG.get(), new BlockPos(0, 2, 0));
         helper.assertTrue(hog.isAlive(), "boar_hog was not alive after spawning");
         helper.runAfterDelay(20, () -> {
             helper.assertTrue(hog.isAlive(), "boar_hog died while ticking its AI");
@@ -52,7 +52,7 @@ public final class HogHunterGameTests {
 
     @GameTest(templateNamespace = "hoghunter", template = "empty", timeoutTicks = 100, setupTicks = 1, required = true)
     public static void hogWeaponDamageHurtsBoar(GameTestHelper helper) {
-        HogEntity boar = helper.spawn(HogEntities.BOAR_HOG.get(), new BlockPos(0, 1, 0));
+        HogEntity boar = helper.spawn(HogEntities.BOAR_HOG.get(), new BlockPos(0, 2, 0));
         Player attacker = helper.makeMockPlayer(GameType.SURVIVAL);
         float before = boar.getHealth();
         helper.assertTrue(HogWeaponDamage.apply(boar, attacker, 1.0F, 0.0F),
@@ -64,16 +64,16 @@ public final class HogHunterGameTests {
 
     @GameTest(templateNamespace = "hoghunter", template = "empty", timeoutTicks = 100, setupTicks = 1, required = true)
     public static void hogBlocksPlaceAndRemove(GameTestHelper helper) {
-        assertPlaceAndRemove(helper, HogBlocks.CORRUPTED_ORE.get(), new BlockPos(0, 0, 0));
-        assertPlaceAndRemove(helper, HogBlocks.DEPTH_GATE.get(), new BlockPos(1, 0, 0));
-        assertPlaceAndRemove(helper, HogBlocks.HOG_NEST.get(), new BlockPos(2, 0, 0));
-        assertPlaceAndRemove(helper, HogBlocks.SALT_LINE.get(), new BlockPos(3, 0, 0));
+        assertPlaceAndRemove(helper, HogBlocks.CORRUPTED_ORE.get(), new BlockPos(0, 2, 0));
+        assertPlaceAndRemove(helper, HogBlocks.DEPTH_GATE.get(), new BlockPos(1, 2, 0));
+        assertPlaceAndRemove(helper, HogBlocks.HOG_NEST.get(), new BlockPos(2, 2, 0));
+        assertPlaceAndRemove(helper, HogBlocks.SALT_LINE.get(), new BlockPos(3, 2, 0));
         helper.succeed();
     }
 
     @GameTest(templateNamespace = "hoghunter", template = "empty", timeoutTicks = 100, setupTicks = 1, required = true)
     public static void hogBlockEntitiesInstantiate(GameTestHelper helper) {
-        BlockPos relativePos = new BlockPos(0, 0, 0);
+        BlockPos relativePos = new BlockPos(0, 2, 0);
         helper.setBlock(relativePos, HogBlocks.HOG_NEST.get());
         BlockEntity entity = helper.getLevel().getBlockEntity(helper.absolutePos(relativePos));
         helper.assertTrue(entity != null, "hog_nest block entity was not created in the level");

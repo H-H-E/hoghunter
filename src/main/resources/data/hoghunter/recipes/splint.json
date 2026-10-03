@@ -1,9 +1,0 @@
-{
-  "type": "minecraft:crafting_shaped",
-  "pattern": ["S ", "ST"],
-  "key": {
-    "S": {"item": "minecraft:stick"},
-    "T": {"item": "minecraft:string"}
-  },
-  "result": {"item": "hoghunter:splint", "count": 1}
-}

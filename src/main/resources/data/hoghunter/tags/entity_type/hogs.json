@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "hoghunter:boar_hog",
+    "hoghunter:hook_hog",
+    "hoghunter:spore_hog",
+    "hoghunter:ironback_hog",
+    "hoghunter:mire_hog",
+    "hoghunter:screecher_hog",
+    "hoghunter:rootmother"
+  ]
+}

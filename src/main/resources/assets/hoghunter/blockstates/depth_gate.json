@@ -1,1 +1,10 @@
-{"variants":{"":{"model":"hoghunter:block/depth_gate"}}}
+{
+  "variants": {
+    "open=false": {
+      "model": "hoghunter:block/depth_gate"
+    },
+    "open=true": {
+      "model": "hoghunter:block/depth_gate_open"
+    }
+  }
+}

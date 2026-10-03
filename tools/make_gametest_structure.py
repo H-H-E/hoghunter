@@ -1,92 +1,80 @@
-"""Generate the empty GameTest structure template used by com.hoghunter.test.
+"""Generate the deterministic, floored Hog Hunter GameTest arena (stdlib only).
 
-Minecraft's release jars do not ship any gametest structure template, so a mod that
-wants GameTests to run has to provide one. This writes
-src/main/resources/data/hoghunter/structure/empty.nbt: a 7x7x7 stone floor with air
-above it. The floor matters -- GameTest entities are spawned inside the structure
-bounds, and without it they fall out of the world before the test can assert on them.
+The 33 x 8 x 33 arena keeps 16-block boss effects inside each test's bounds.
+Every air block is explicit so a repeated run clears earlier obstacles. List
+entries contain NBT payloads, not named compound tags: the latter silently nest
+all palette/block properties under an empty key and produce an unusable floor.
 
-Pure-stdlib NBT writer, so the build has no new Python dependency.
+Run without arguments to regenerate, or with --check for a nonmutating CI check.
 """
 
+import argparse
 import gzip
 import struct
 from pathlib import Path
 
-TAG_END = 0
-TAG_INT = 3
-TAG_STRING = 8
-TAG_LIST = 9
-TAG_COMPOUND = 10
-
+TAG_END, TAG_INT, TAG_STRING, TAG_LIST, TAG_COMPOUND = 0, 3, 8, 9, 10
 DATA_VERSION = 3955  # Minecraft 1.21.1
-SIZE = 7
+SIZE = (33, 8, 33)
 OUT = Path(__file__).resolve().parent.parent / "src/main/resources/data/hoghunter/structure/empty.nbt"
 
 
-def _string_payload(value):
+def string_payload(value):
     raw = value.encode("utf-8")
     return struct.pack(">H", len(raw)) + raw
 
 
-def tag(tag_type, payload=b""):
-    return struct.pack(">B", tag_type) + payload
-
-
 def named(tag_type, name, payload):
-    return tag(tag_type, _string_payload(name) + payload)
+    return bytes([tag_type]) + string_payload(name) + payload
 
 
-def compound(name, entries):
-    body = b"".join(entries) + tag(TAG_END)
-    return named(TAG_COMPOUND, name, body)
+def compound_payload(entries):
+    return b"".join(entries) + bytes([TAG_END])
+
+
+def int_tag(name, value):
+    return named(TAG_INT, name, struct.pack(">i", value))
 
 
 def int_list(name, values):
-    payload = struct.pack(">Bi", TAG_INT, len(values))
-    payload += b"".join(struct.pack(">i", v) for v in values)
-    return named(TAG_LIST, name, payload)
+    return named(TAG_LIST, name, struct.pack(">Bi", TAG_INT, len(values))
+                 + b"".join(struct.pack(">i", value) for value in values))
 
 
-def compound_list(name, items):
-    payload = struct.pack(">Bi", TAG_COMPOUND, len(items))
-    for item in items:
-        payload += item + tag(TAG_END)
-    return named(TAG_LIST, name, payload)
+def compound_list(name, entries):
+    return named(TAG_LIST, name, struct.pack(">Bi", TAG_COMPOUND, len(entries)) + b"".join(entries))
 
 
-def string_list(name, values):
-    payload = struct.pack(">Bi", TAG_STRING, len(values))
-    for value in values:
-        payload += _string_payload(value)
-    return named(TAG_LIST, name, payload)
+def generate():
+    palette = [compound_payload([named(TAG_STRING, "Name", string_payload(block))])
+               for block in ("minecraft:stone", "minecraft:air")]
+    blocks = [compound_payload([int_list("pos", [x, y, z]), int_tag("state", 0 if y == 0 else 1)])
+              for x in range(SIZE[0]) for y in range(SIZE[1]) for z in range(SIZE[2])]
+    root = named(TAG_COMPOUND, "", compound_payload([
+        int_tag("DataVersion", DATA_VERSION), int_list("size", SIZE),
+        compound_list("palette", palette), compound_list("blocks", blocks),
+        compound_list("entities", []),
+    ]))
+    encoded = bytearray(gzip.compress(root, mtime=0))
+    # Python/zlib versions may write the host OS into byte 9. Canonicalize it so
+    # --check compares the same template on Windows, Linux and macOS.
+    encoded[9] = 255
+    return bytes(encoded)
 
 
 def main():
-    # Index 0 = stone (the floor), index 1 = air.
-    palette = [
-        compound("", [named(TAG_STRING, "Name", _string_payload("minecraft:stone"))]),
-        compound("", [named(TAG_STRING, "Name", _string_payload("minecraft:air"))]),
-    ]
-
-    blocks = []
-    for x in range(SIZE):
-        for z in range(SIZE):
-            blocks.append(
-                compound("", [int_list("pos", [x, 0, z]), named(TAG_INT, "state", struct.pack(">i", 0))])
-            )
-
-    root = compound("", [
-        int_list("size", [SIZE, SIZE, SIZE]),
-        compound_list("palette", palette),
-        compound_list("blocks", blocks),
-        string_list("entities", []),
-        named(TAG_INT, "DataVersion", struct.pack(">i", DATA_VERSION)),
-    ])
-
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_bytes(gzip.compress(root, mtime=0))
-    print(f"wrote {OUT} ({OUT.stat().st_size} bytes)")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true", help="fail if the checked-in template differs")
+    args = parser.parse_args()
+    data = generate()
+    if args.check:
+        if not OUT.exists() or OUT.read_bytes() != data:
+            parser.exit(1, "GameTest template is stale; run python tools/make_gametest_structure.py\n")
+        print(f"GameTest template verified ({' x '.join(map(str, SIZE))}, {len(data)} bytes)")
+    else:
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        OUT.write_bytes(data)
+        print(f"wrote {OUT} ({len(data)} bytes)")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,73 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "salt": "minecraft:block/white_concrete_powder",
+    "particle": "minecraft:block/white_concrete_powder"
+  },
+  "elements": [
+    {
+      "from": [
+        1,
+        0.02,
+        6
+      ],
+      "to": [
+        15,
+        0.25,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#salt"
+        },
+        "south": {
+          "texture": "#salt"
+        },
+        "east": {
+          "texture": "#salt"
+        },
+        "west": {
+          "texture": "#salt"
+        },
+        "up": {
+          "texture": "#salt"
+        },
+        "down": {
+          "texture": "#salt"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        0.02,
+        1
+      ],
+      "to": [
+        10,
+        0.25,
+        15
+      ],
+      "faces": {
+        "north": {
+          "texture": "#salt"
+        },
+        "south": {
+          "texture": "#salt"
+        },
+        "east": {
+          "texture": "#salt"
+        },
+        "west": {
+          "texture": "#salt"
+        },
+        "up": {
+          "texture": "#salt"
+        },
+        "down": {
+          "texture": "#salt"
+        }
+      }
+    }
+  ]
+}

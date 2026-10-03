@@ -1,0 +1,1063 @@
+{
+  "version": 1,
+  "seed": 20261003,
+  "provenance": "All custom raster art and one-shot recordings are original outputs of tools/gen_assets.py. Native Minecraft assets referenced by JSON are resolved from the player installation and are not redistributed.",
+  "toolchain": {
+    "python": "3.12.14",
+    "pillow": "12.3.0",
+    "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers"
+  },
+  "scope": "Owned procedural PNG/OGG/mcmeta outputs only. Runtime JSON models, language, data and native references are validated separately by tools/verify_resources.py.",
+  "outputs": [
+    {
+      "path": "assets/hoghunter/textures/entity/hog/boar_hog.png",
+      "generator": "generate_entity_skin",
+      "asset_id": "boar_hog",
+      "size": [
+        64,
+        64
+      ],
+      "palette": [
+        [
+          116,
+          57,
+          49,
+          255
+        ],
+        [
+          196,
+          131,
+          83,
+          255
+        ],
+        "low"
+      ],
+      "output_size": [
+        64,
+        512
+      ],
+      "sha256": "3cfba4f0c846cd729d5109de1958ffbc6430f296721c91011eeac2ba6a00d92c"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/boar_hog.png.mcmeta",
+      "generator": "animation",
+      "data": {
+        "animation": {
+          "frametime": 2,
+          "interpolate": true,
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      },
+      "sha256": "83b47eed8c9092d5d00ef0f6111321ba4cd3a566c1f3a78374cae3bbecf11eed"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/spore_hog.png",
+      "generator": "generate_entity_skin",
+      "asset_id": "spore_hog",
+      "size": [
+        64,
+        64
+      ],
+      "palette": [
+        [
+          54,
+          91,
+          68,
+          255
+        ],
+        [
+          145,
+          202,
+          135,
+          255
+        ],
+        "hump"
+      ],
+      "output_size": [
+        64,
+        512
+      ],
+      "sha256": "e7a4b319d87221ccfd9cdc39a24f09501f28a046b52cc6cd678ef6321ef6d08f"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/spore_hog.png.mcmeta",
+      "generator": "animation",
+      "data": {
+        "animation": {
+          "frametime": 2,
+          "interpolate": true,
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      },
+      "sha256": "83b47eed8c9092d5d00ef0f6111321ba4cd3a566c1f3a78374cae3bbecf11eed"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/hook_hog.png",
+      "generator": "generate_entity_skin",
+      "asset_id": "hook_hog",
+      "size": [
+        64,
+        64
+      ],
+      "palette": [
+        [
+          61,
+          64,
+          78,
+          255
+        ],
+        [
+          190,
+          177,
+          142,
+          255
+        ],
+        "tall"
+      ],
+      "output_size": [
+        64,
+        512
+      ],
+      "sha256": "2aee052eba114452d69298282c495882b735effb92a8f18e35cc930b19338195"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/hook_hog.png.mcmeta",
+      "generator": "animation",
+      "data": {
+        "animation": {
+          "frametime": 2,
+          "interpolate": true,
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      },
+      "sha256": "83b47eed8c9092d5d00ef0f6111321ba4cd3a566c1f3a78374cae3bbecf11eed"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/screecher_hog.png",
+      "generator": "generate_entity_skin",
+      "asset_id": "screecher_hog",
+      "size": [
+        64,
+        64
+      ],
+      "palette": [
+        [
+          104,
+          45,
+          61,
+          255
+        ],
+        [
+          232,
+          114,
+          130,
+          255
+        ],
+        "thin"
+      ],
+      "output_size": [
+        64,
+        512
+      ],
+      "sha256": "8888fba97a07f40db448648e741eed815c927d263b417818fff309e511aaf353"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/screecher_hog.png.mcmeta",
+      "generator": "animation",
+      "data": {
+        "animation": {
+          "frametime": 2,
+          "interpolate": true,
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      },
+      "sha256": "83b47eed8c9092d5d00ef0f6111321ba4cd3a566c1f3a78374cae3bbecf11eed"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/ironback_hog.png",
+      "generator": "generate_entity_skin",
+      "asset_id": "ironback_hog",
+      "size": [
+        64,
+        64
+      ],
+      "palette": [
+        [
+          48,
+          52,
+          58,
+          255
+        ],
+        [
+          160,
+          168,
+          176,
+          255
+        ],
+        "broad"
+      ],
+      "output_size": [
+        64,
+        512
+      ],
+      "sha256": "f062ad8cfacf98c446094843693c343905eefe5ae45ff20f49846c6a55fd7907"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/ironback_hog.png.mcmeta",
+      "generator": "animation",
+      "data": {
+        "animation": {
+          "frametime": 2,
+          "interpolate": true,
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      },
+      "sha256": "83b47eed8c9092d5d00ef0f6111321ba4cd3a566c1f3a78374cae3bbecf11eed"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/mire_hog.png",
+      "generator": "generate_entity_skin",
+      "asset_id": "mire_hog",
+      "size": [
+        64,
+        64
+      ],
+      "palette": [
+        [
+          46,
+          72,
+          56,
+          255
+        ],
+        [
+          139,
+          172,
+          103,
+          255
+        ],
+        "mire"
+      ],
+      "output_size": [
+        64,
+        512
+      ],
+      "sha256": "8d34b9680d2948b84fb2854d467586e56859328297f1735624efee4988220f54"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/mire_hog.png.mcmeta",
+      "generator": "animation",
+      "data": {
+        "animation": {
+          "frametime": 2,
+          "interpolate": true,
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      },
+      "sha256": "83b47eed8c9092d5d00ef0f6111321ba4cd3a566c1f3a78374cae3bbecf11eed"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/rootmother.png",
+      "generator": "generate_entity_skin",
+      "asset_id": "rootmother",
+      "size": [
+        64,
+        64
+      ],
+      "palette": [
+        [
+          73,
+          39,
+          45,
+          255
+        ],
+        [
+          179,
+          117,
+          67,
+          255
+        ],
+        "boss"
+      ],
+      "output_size": [
+        64,
+        512
+      ],
+      "sha256": "db6826f1a459e7c23abe8643c2bf85adf2a054c148542ad9d5d53ddc75d4b1ac"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/rootmother.png.mcmeta",
+      "generator": "animation",
+      "data": {
+        "animation": {
+          "frametime": 2,
+          "interpolate": true,
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      },
+      "sha256": "83b47eed8c9092d5d00ef0f6111321ba4cd3a566c1f3a78374cae3bbecf11eed"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/tusked_hog.png",
+      "generator": "generate_entity_skin",
+      "asset_id": "tusked_hog",
+      "size": [
+        64,
+        64
+      ],
+      "palette": [
+        [
+          116,
+          57,
+          49,
+          255
+        ],
+        [
+          196,
+          131,
+          83,
+          255
+        ],
+        "low"
+      ],
+      "output_size": [
+        64,
+        512
+      ],
+      "sha256": "c8e6ed3e3d188730789c6c21318800ea60b99772f05e9b5e8f255a88aa6a3a3b"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/tusked_hog.png.mcmeta",
+      "generator": "animation",
+      "data": {
+        "animation": {
+          "frametime": 2,
+          "interpolate": true,
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      },
+      "sha256": "83b47eed8c9092d5d00ef0f6111321ba4cd3a566c1f3a78374cae3bbecf11eed"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/mine_hog.png",
+      "generator": "generate_entity_skin",
+      "asset_id": "mine_hog",
+      "size": [
+        64,
+        64
+      ],
+      "palette": [
+        [
+          48,
+          52,
+          58,
+          255
+        ],
+        [
+          160,
+          168,
+          176,
+          255
+        ],
+        "broad"
+      ],
+      "output_size": [
+        64,
+        512
+      ],
+      "sha256": "94764f4fcd0e115f111adb921c51ebc8126cef848a1069900d1311d93d2627ca"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/mine_hog.png.mcmeta",
+      "generator": "animation",
+      "data": {
+        "animation": {
+          "frametime": 2,
+          "interpolate": true,
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      },
+      "sha256": "83b47eed8c9092d5d00ef0f6111321ba4cd3a566c1f3a78374cae3bbecf11eed"
+    },
+    {
+      "path": "assets/hoghunter/textures/entity/hog/hog_blood_overlay.png",
+      "generator": "generate_blood_overlay",
+      "asset_id": "hog_blood_overlay",
+      "size": [
+        64,
+        64
+      ],
+      "palette": [],
+      "output_size": [
+        64,
+        64
+      ],
+      "sha256": "7b4943ed78d48ae27cbcd8db0821cc0f60500e2ec8f71932d1e598e635845638"
+    },
+    {
+      "path": "assets/hoghunter/textures/block/bloodstone_ore.png",
+      "generator": "generate_block_texture",
+      "asset_id": "bloodstone_ore",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        76,
+        29,
+        38
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "d84d93816d72b3c2cb2dd4e83a361212e3ed85f6148d1b6d5fb80d44d254c069"
+    },
+    {
+      "path": "assets/hoghunter/textures/block/cursed_bone_block.png",
+      "generator": "generate_block_texture",
+      "asset_id": "cursed_bone_block",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        187,
+        172,
+        137
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "e6184f1011f3ea26d86a21b3563ad8d7814bd023bd7eda3926cfeb877d927637"
+    },
+    {
+      "path": "assets/hoghunter/textures/block/hog_flesh_block.png",
+      "generator": "generate_block_texture",
+      "asset_id": "hog_flesh_block",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        117,
+        44,
+        46
+      ],
+      "output_size": [
+        16,
+        64
+      ],
+      "sha256": "ef1228d4c5beebf5a286637cd85f2fadc926008041da898f0642fa5ab81f3fe3"
+    },
+    {
+      "path": "assets/hoghunter/textures/block/hog_flesh_block.png.mcmeta",
+      "generator": "animation",
+      "data": {
+        "animation": {
+          "frametime": 4,
+          "interpolate": false,
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      },
+      "sha256": "45fb89b298caa18aebb3b10ae204d81acea092e4e22a255f6946dac071d0fd49"
+    },
+    {
+      "path": "assets/hoghunter/textures/block/ritual_altar.png",
+      "generator": "generate_block_texture",
+      "asset_id": "ritual_altar",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        46,
+        37,
+        47
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "dafa116c12bb431cbb175bcbfb768d92823659365a7938100ef7502b694dc89e"
+    },
+    {
+      "path": "assets/hoghunter/textures/block/depth_gate.png",
+      "generator": "generate_block_texture",
+      "asset_id": "depth_gate",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        29,
+        36,
+        48
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "d71be8bf165eeac173dd5e0ce70bd1c84cf69094f1bd8818696524b33b5bd4b5"
+    },
+    {
+      "path": "assets/hoghunter/textures/block/corrupted_ore.png",
+      "generator": "generate_block_texture",
+      "asset_id": "corrupted_ore",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        62,
+        38,
+        76
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "3444dc89efbb67c475994db7944e967f222705a8ae0c634b21cb6db1ce479df8"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/hog_cleaver.png",
+      "generator": "generate_item_icon",
+      "asset_id": "hog_cleaver",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        184,
+        192,
+        201
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "bca9a84aa6b57e2da7a7708cbc58eb825516c1b84993551990d2e393e373ff71"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/hog_flesh.png",
+      "generator": "generate_item_icon",
+      "asset_id": "hog_flesh",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        161,
+        56,
+        61
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "9849784af2e2b5e9ad10253b0cdf6b62879823ad2a6fabb0605028cf4bac2b94"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/bloodstone_chunk.png",
+      "generator": "generate_item_icon",
+      "asset_id": "bloodstone_chunk",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        145,
+        44,
+        58
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "47a6e81e584b280e89f2888cf7fcb6e2ae0623d5384bc34f4a3eab7e1859994e"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/cursed_bone.png",
+      "generator": "generate_item_icon",
+      "asset_id": "cursed_bone",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        199,
+        183,
+        144
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "ada8b519a33564416b73b0597e529b79971d9280a7ee1d8cea3763eabfaff3bb"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/salt_cartridge.png",
+      "generator": "generate_item_icon",
+      "asset_id": "salt_cartridge",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        225,
+        225,
+        211
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "2273c61f70fdccf6bb76d2395abb926f2e8ba67d0697156d376073d83290089b"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/hunting_knife.png",
+      "generator": "generate_item_icon",
+      "asset_id": "hunting_knife",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        185,
+        194,
+        202
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "325dcb427ac196eb0e7abe0c4ba564a464b603892ccd6991bf34006055c093cd"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/hog_heart.png",
+      "generator": "generate_item_icon",
+      "asset_id": "hog_heart",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        183,
+        39,
+        55
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "a9ec257ae6c60ee7edaf5bb05ae9dcae0d90dbd4e09d4649d35ce19407c3bce6"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/sanity_lantern.png",
+      "generator": "generate_item_icon",
+      "asset_id": "sanity_lantern",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        214,
+        157,
+        53
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "fc276afc8e3a6828ad4f0327eea1bd74daa867abb19c6ed5868db08c49ae3514"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/field_lantern.png",
+      "generator": "generate_item_icon",
+      "asset_id": "field_lantern",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        214,
+        157,
+        53
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "fc276afc8e3a6828ad4f0327eea1bd74daa867abb19c6ed5868db08c49ae3514"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/hoghide_helmet.png",
+      "generator": "generate_item_icon",
+      "asset_id": "hoghide_helmet",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        115,
+        67,
+        53
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "5a52d46f38f8030f807c1f2aa45c65068a3aea695156e0be6aba87df18338c60"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/hoghide_chestplate.png",
+      "generator": "generate_item_icon",
+      "asset_id": "hoghide_chestplate",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        115,
+        67,
+        53
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "5a52d46f38f8030f807c1f2aa45c65068a3aea695156e0be6aba87df18338c60"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/hoghide_leggings.png",
+      "generator": "generate_item_icon",
+      "asset_id": "hoghide_leggings",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        115,
+        67,
+        53
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "5a52d46f38f8030f807c1f2aa45c65068a3aea695156e0be6aba87df18338c60"
+    },
+    {
+      "path": "assets/hoghunter/textures/item/hoghide_boots.png",
+      "generator": "generate_item_icon",
+      "asset_id": "hoghide_boots",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        115,
+        67,
+        53
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "5a52d46f38f8030f807c1f2aa45c65068a3aea695156e0be6aba87df18338c60"
+    },
+    {
+      "path": "assets/hoghunter/textures/gui/hog_hunter_vignette.png",
+      "generator": "generate_gui_overlay",
+      "asset_id": "hog_hunter_vignette",
+      "size": [
+        256,
+        256
+      ],
+      "palette": [
+        40,
+        5,
+        12
+      ],
+      "output_size": [
+        256,
+        256
+      ],
+      "sha256": "b30336bb19789f18da1fd6cfc981705d3d8040c88defefda3b6849cc43846a67"
+    },
+    {
+      "path": "assets/hoghunter/textures/gui/hog_hunter_blood_edges.png",
+      "generator": "generate_gui_overlay",
+      "asset_id": "hog_hunter_blood_edges",
+      "size": [
+        256,
+        256
+      ],
+      "palette": [
+        130,
+        12,
+        18
+      ],
+      "output_size": [
+        256,
+        256
+      ],
+      "sha256": "f128e2311e63ec7ed6a7628bc924ecead6ec7097075d9e9473cf33f2eadab39c"
+    },
+    {
+      "path": "assets/hoghunter/textures/gui/ritual_altar_panel.png",
+      "generator": "generate_gui_overlay",
+      "asset_id": "ritual_altar_panel",
+      "size": [
+        176,
+        166
+      ],
+      "palette": [
+        164,
+        101,
+        56
+      ],
+      "output_size": [
+        176,
+        166
+      ],
+      "sha256": "1670e764d8bd8f59c675c7e964bbf0856f0d760a1708992d94cd4ed2d97c3070"
+    },
+    {
+      "path": "assets/hoghunter/textures/gui/fear_meter.png",
+      "generator": "generate_gui_overlay",
+      "asset_id": "fear_meter",
+      "size": [
+        16,
+        64
+      ],
+      "palette": [
+        172,
+        37,
+        45
+      ],
+      "output_size": [
+        16,
+        64
+      ],
+      "sha256": "87159e5760770d7147c0f78e787603c58c0b78df0b80ba7f14d689e50f0defd0"
+    },
+    {
+      "path": "assets/hoghunter/textures/models/armor/hoghide_layer_1.png",
+      "generator": "generate_armor_layer",
+      "asset_id": "hoghide_layer_1",
+      "size": [
+        64,
+        32
+      ],
+      "palette": [
+        115,
+        67,
+        53
+      ],
+      "output_size": [
+        64,
+        32
+      ],
+      "sha256": "c7eb79ed3fccc71457412f082279ed5fef72093fab570f6d59182f7a332ee987"
+    },
+    {
+      "path": "assets/hoghunter/textures/models/armor/hoghide_layer_2.png",
+      "generator": "generate_armor_layer",
+      "asset_id": "hoghide_layer_2",
+      "size": [
+        64,
+        32
+      ],
+      "palette": [
+        91,
+        50,
+        42
+      ],
+      "output_size": [
+        64,
+        32
+      ],
+      "sha256": "dfe6df014772777bc7cfa90782a1c8134ae6fb453625cbd2eaecc42c56662eb3"
+    },
+    {
+      "path": "assets/hoghunter/textures/particle/blood_mist.png",
+      "generator": "generate_particle_sheet",
+      "asset_id": "blood_mist",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        145,
+        25,
+        38
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "95cb609ba8f165344f059f58e6825dfc1f3f6185857edf0c8828fbe8cb46706f"
+    },
+    {
+      "path": "assets/hoghunter/textures/particle/spore_cloud.png",
+      "generator": "generate_particle_sheet",
+      "asset_id": "spore_cloud",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        94,
+        177,
+        117
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "9e43ecb206665c5f3961c12593e52c2c2b36f173c2f646fde516a3f4d31e9081"
+    },
+    {
+      "path": "assets/hoghunter/textures/particle/hog_spark.png",
+      "generator": "generate_particle_sheet",
+      "asset_id": "hog_spark",
+      "size": [
+        16,
+        16
+      ],
+      "palette": [
+        227,
+        161,
+        63
+      ],
+      "output_size": [
+        16,
+        16
+      ],
+      "sha256": "7f35eed51ec948c6c71e4a3307addb2c197c32107daeede7a026451a9784d083"
+    },
+    {
+      "path": "assets/hoghunter/sounds/entity/boar_hog/ambient_01.ogg",
+      "generator": "sound",
+      "asset_id": "entity/boar_hog/ambient_01",
+      "kind": "ambient",
+      "sample_rate": 44100,
+      "channels": 1,
+      "sha256": "60e87c098984d0e28495c5e39839eca87631780f41b09d23a8095b21b0753b94"
+    },
+    {
+      "path": "assets/hoghunter/sounds/entity/boar_hog/attack.ogg",
+      "generator": "sound",
+      "asset_id": "entity/boar_hog/attack",
+      "kind": "attack",
+      "sample_rate": 44100,
+      "channels": 1,
+      "sha256": "6d985af2b12fafe8cc709b333310d5490c68a048e551a4af1c1bc957468866e3"
+    },
+    {
+      "path": "assets/hoghunter/sounds/entity/boar_hog/squeal.ogg",
+      "generator": "sound",
+      "asset_id": "entity/boar_hog/squeal",
+      "kind": "squeal",
+      "sample_rate": 44100,
+      "channels": 1,
+      "sha256": "3d76406b0691225ac72a61427c698613b21a3ae6b5e45875e17ded8dd7f937a0"
+    },
+    {
+      "path": "assets/hoghunter/sounds/block/ritual_altar/activate.ogg",
+      "generator": "sound",
+      "asset_id": "block/ritual_altar/activate",
+      "kind": "activate",
+      "sample_rate": 44100,
+      "channels": 1,
+      "sha256": "710dfd1036db9b4660eb695af89f8ac0ff6ef9957e612741354d0575788ab265"
+    }
+  ]
+}

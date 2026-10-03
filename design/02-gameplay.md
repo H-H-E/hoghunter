@@ -1,240 +1,220 @@
-# Hog Hunter — Gameplay & Horror Design
+# Hog Hunter gameplay and scope
 
-**Target:** Minecraft Java 1.21.1, NeoForge 21.1.253, Java 21  
-**Mod id:** `hoghunter`  
-**Base package:** `com.hoghunter`
+Target: Minecraft Java 1.21.1 / NeoForge 21.1.253. This is the current gameplay contract;
+[`docs/HANDOFF.md`](../docs/HANDOFF.md) records how much of it has actually been verified.
+The original larger campaign plan is preserved in Git history at `3b538c5`.
 
-This document defines the playable single-player loop and the data that the implementation must expose. It assumes vanilla survival movement, mining, crafting, containers, and world saving remain available. Hog Hunter adds a pressure layer around descending, hunting, extracting evidence, and escaping.
+## 1. The supported survival loop
 
-## 1. Core loop
+Hog Hunter adds a hunting and pressure loop to **ordinary Overworld caves**. Players prepare
+weapons, fuel, and medicine, descend for species-specific materials, return to a surface altar to
+bank progression, and eventually prepare a deep room for the Rootmother ritual.
 
-The player begins at a surface hunter camp at Y=64. A mine entrance leads into a generated vertical mine below Y=48. Each expedition is a run of five depth bands:
+There is no generated surface camp or five-floor mine campaign. A player's own base is the camp,
+and a craftable `hoghunter:root_altar` is both the surface extraction station and the deep ritual
+anchor. This gives existing survival worlds a route into the content without replacing their
+terrain or requiring commands.
 
-| Band | Y range | Purpose | Required progression |
-|---|---:|---|---|
-| Surface camp | 64 and above | Craft, heal, store trophies | None |
-| Shallow workings | 48 to 16 | Learn tracking and conserve oil | Bolt gun, lantern |
-| Flooded galleries | 15 to -16 | Water, ambushes, harpoon traversal | Harpoon blueprint |
-| Blackstone seam | -17 to -48 | Fractures and pack hunts | Reinforced armor, snare |
-| The Root | -49 to -64 | Boss arena and extraction | Three marked tusks |
+Recommended sequence:
 
-The session loop is: prepare at camp → enter with a finite loadout → read spoor and sound cues → locate and kill hogs → collect `hoghunter:corrupted_tissue`, tusks, and depth evidence → satisfy the current depth objective → return to the entrance or descend → spend trophies on permanent unlocks. Death drops the expedition inventory at the death position; permanent blueprint unlocks and discovered depth records remain.
+1. Craft a bolt gun, iron bolts, field lantern, oil cans, and a bandage. Put the lantern in the
+   offhand to keep a weapon available. Right-click the lantern to switch it on.
+2. Find corrupted ore below Y=48 or hunt Burrowers for corrupted tissue. Mine the ore with the
+   required pickaxe. Craft a root altar and place it outdoors at Y=48 or higher with open sky above.
+3. Bring materials back to the surface altar and interact to advance one progression step at a
+   time. The altar consumes only that step's evidence after all requirements pass.
+4. Hunt deeper species, prepare medical supplies, and use the harpoon, snares, salt, and armor.
+5. At tier 3, place an altar at Y=-49 or lower. Prepare a dry, supported room around it. Offer
+   three marked tusks to summon Rootmother, defeat her, and return the root heart to the surface.
 
-Every mine level has one objective from `data/hoghunter/hog_objectives/*.json`, one safe-room candidate, and one extraction route. The objective must be completed before the descent gate opens. The gate is a locked `hoghunter:depth_gate` block whose server-side interaction checks the player's persistent progression flag; the client never decides whether a gate is open.
+Recipes are ordinary Minecraft recipes. Progression does not implement a separate recipe
+blueprint/reload interface or prevent players from digging around gates. Materials and the ritual
+requirements provide the main progression constraints.
 
-The default run target is 25–35 minutes. A successful kill is not enough: the player must choose when to stop hunting because carrying more trophies increases risk and makes the return trip harder.
+## 2. Materials, extraction, and gates
 
-## 2. Authoritative player survival state
+| Material | Survival source / use |
+|---|---|
+| `salt` | Smelt a dried kelp block into four salt; used by the shaker, ration, and purification recipe |
+| `corrupted_tissue` | Corrupted ore and Burrower drops; early extraction and altar crafting |
+| `hook_tooth` | Chainjaw drops; second extraction and tusk purification |
+| `spore_sac` | Lanternback drops; second extraction |
+| `iron_plate` | Ironback drops; third extraction and harness upgrade |
+| `marked_tusk` | Deep-hog drops; three are required for a ritual |
+| `purified_tusk` | Craft from hook tooth, salt, and amethyst; silver bolt gun ingredient |
+| `root_heart` | Rootmother drop; final extraction and retained trophy |
 
-Store the following server-authoritative values in a `HogHunterData` attachment on `Player`, registered through `RegisterAttachmentsEvent` as `HoghunterAttachments.PLAYER_DATA`. Synchronize changed values with a play-to-client payload from `RegisterPayloadHandlersEvent` on `PlayPayloadHandler` channel `hoghunter:state_sync`; do not use client-only fields as gameplay authority.
+The salt and purified-tusk tags contain real mod items. Sugar and ordinary bones no longer stand
+in for those materials.
 
-| Field | Range / default | Meaning |
+| Tier after interaction | Where / requirements | Result |
+|---|---|---|
+| 1 | Surface altar: three corrupted tissue | Consume three tissue and bank the first tier |
+| 2 | Surface altar: one hook tooth and one spore sac | Consume both samples and bank the second tier |
+| 3 | Surface altar: one iron plate and at least one successfully treated fracture | Consume the plate and bank the ritual-access tier |
+| 4 | Deep altar: tier 3 and three marked tusks; valid room; non-Peaceful difficulty; no active ritual boss | Consume tusks only after successful spawn and begin the encounter |
+| 5 | Surface altar: carry a root heart | Complete extraction; retain the heart as a trophy; do not repeatedly award completion |
+
+Surface extraction requires an Overworld altar at Y>=48 with sky above. The ritual requires an
+Overworld altar at Y<=-49. An altar between those ranges explains the location requirement.
+Creative mode may bypass the ritual materials/tier for testing.
+
+A depth gate checks the player's permanent tier on the server. Its required tier follows depth;
+when opened, its collision is removed so it can actually be crossed. A gate is an ordinary placed
+block, not a world-wide barrier against mining alternate routes.
+
+The ritual uses a prepared room. The boss spawns four blocks from the altar along an available
+horizontal direction, with supported ground, sufficient collision clearance, no liquid, loaded
+chunks, and a valid world-border position. The helper does not carve through terrain or player
+builds. The world saves an active-boss reservation so unloaded bosses are not casually duplicated.
+A defeated boss can be summoned again with another valid offering.
+
+## 3. Survival state
+
+| State | Behavior |
+|---|---|
+| Heart rate | 45–180 BPM; target updated every ten ticks; current rate moves two BPM per update, or four BPM/second |
+| Noise | 0–100; decays four points/second; movement, mining, gunfire, traps, and abilities add noise |
+| Oil | 0–100; lit held/offhand lantern uses one point per 240 active ticks at default config |
+| Ammo | Displayed count of actual inventory iron bolts; no second loaded-ammunition store |
+| Wounds | 0–3; each removes one heart of maximum health and adds eight BPM |
+| Fractures | 0–2; each reduces movement speed ten percent; severity two also locks sprint |
+| Sanity | 0–100; changes pressure and presentation; never substitutes for health |
+| Tier | 0–5; permanent extraction/ritual progress |
+| Treated fractures | Persistent record used by the tier-three requirement |
+
+The server computes heart-rate stress from darkness without usable lantern light, an empty tank
+underground, visible hogs within twelve blocks, any hog within six blocks, sprinting, wounds,
+severe fractures, and low sanity. Rootmother counts as a hog. The heartbeat stress multiplier
+scales positive stress; it does not let the client choose a target BPM.
+
+At 120 BPM, mining speed is reduced ten percent. At 140 BPM, sprinting causes additional food
+exhaustion. Reaching 180 BPM starts a three-second sprint lock and emits thirty noise, with a
+cooldown to prevent a permanent panic retrigger loop. Client heartbeat and screen feedback follow
+the mirrored state. The earlier planned accuracy cone, random stagger, and every specified
+hallucination animation are not assumed present merely because a BPM threshold exists.
+
+Sanity falls one point per ten seconds below Y=16 while oil is at most ten. It recovers in a bright
+surface location and through extraction. At zero it returns to fifteen, increases heart rate, and
+can temporarily disable the lantern. Configured horror effects are presentation controls.
+
+### Lantern behavior and the light substitution
+
+The field lantern is a toggleable **held/offhand item**. While lit, fueled, and outside blackout it
+provides owned night vision, removes the darkness stress contribution, and reveals nearby Mire
+Hogs within eight blocks when visible. Fuel drain stops when the lantern is off or not held.
+Partial oil drain survives saving.
+
+Night vision is the current practical visibility implementation. It does **not** emit block light,
+change world lighting, light the scene for other players, or suppress monster spawning. The
+lantern is not placeable or throwable. Those differences from the original radius-light design
+are deliberate scope limits, not hidden engine features.
+
+Boss blackout disables availability with a timer and leaves oil untouched. Turning off or losing
+the lantern removes only the lantern's own vision effect, preserving unrelated potion effects.
+
+### Injury and treatment
+
+A surviving final-damage hit of at least eight health points can add a wound. A heavy hog hit of
+at least twelve health points or a sufficiently severe fall can add a fracture. Wounds bleed one
+health point every twelve seconds, with a floor of two health points. Changes use server-side
+attribute modifiers and damage events.
+
+| Item | Use time | Result |
 |---|---:|---|
-| `heartRate` | 45–180 BPM, default 60 | Current fear/physical load. Recomputed every 10 ticks. |
-| `oil` | 0–100, default 100 | Lantern fuel percentage. One point is 1/100 of a full tank. |
-| `reserveOil` | integer, default 0 | Whole oil-can charges. One oil can adds 50 points, capped at 100. |
-| `ammo` | integer, default 12 | Loaded bolt cartridges, not inventory bolts. |
-| `wounds` | 0–3, default 0 | Bleeding injuries. Each wound adds +8 BPM and reduces max health by 1 heart until treated. |
-| `fracture` | 0–2, default 0 | Broken limb severity. Each level reduces movement speed by 10%; level 2 also disables sprinting. |
-| `sanity` | 0–100, default 100 | Hidden server value used to authorize hallucinations and audio events. |
-| `noise` | 0–100, default 0 | Decays by 4 per second; mining, sprinting, and weapons add noise. |
-| `evidence` | integer | Expedition-only proof carried in the inventory; extraction banks it at camp. |
+| Bandage | 60 ticks / 3 seconds | Remove one wound; requires an injury and sufficient health |
+| Splint | 100 ticks / 5 seconds | Remove one fracture while standing still; record successful treatment |
+| Field medkit | 80 ticks / 4 seconds | Heal four HP; remove one wound and one fracture; Weakness for ten seconds |
+| Salt ration | 32 ticks / 1.6 seconds | Restore hunger and reduce heart rate |
+| Oil can | 32 ticks / 1.6 seconds | Add fifty oil, capped at one hundred; reject a full tank |
 
-### Heartbeat model
+Treatment is server-authoritative, does not consume an item when invalid, and is interrupted by
+damage or sprinting; splints also require stillness. Check exact interaction restrictions in
+`HogConsumableItem` when changing use mechanics.
 
-Every 10 ticks, the server calculates a target BPM:
+Death follows vanilla inventory-drop rules. Respawn clears temporary injuries, pressure, active
+lantern/locks, and expedition counters while retaining permanent tier and treatment history.
+Reconnect/save loading restores persistent values with safe defaults for missing older fields.
 
-`target = clamp(60 + lightStress + proximityStress + woundStress + sprintStress + sanityStress, 45, 180)`
+## 4. Seven distinct enemies
 
-The current value moves 4 BPM toward `target` per second. Components are:
+Health and damage below are base values before configured multipliers and applicable armor.
+One heart equals two health points.
 
-| Source | Contribution |
-|---|---:|
-| Lantern brightness below 8 light | +10 |
-| Lantern oil at 0 | +20 |
-| Any hostile hog within 12 blocks and line of sight | +15 |
-| Any hostile hog within 6 blocks, line of sight or not | +25 |
-| `It Hunts You` stalk active | +20 |
-| Sprinting | +8 |
-| Each wound | +8 |
-| Fracture level 2 | +6 |
-| Sanity below 35 | +10 |
-| Sanity below 15 | +15 |
-| Standing in a safe room | -20, minimum 45 |
-
-Threshold effects are evaluated on the server and sent to the client as state flags:
-
-| BPM | Effect |
-|---:|---|
-| 90–119 | Audible heartbeat every 1.5 seconds; no mechanical penalty. |
-| 120–139 | FOV pulses ±2 degrees; mining speed -10%; breathing sound. |
-| 140–159 | Sprint drains 1 extra hunger point per 2 seconds; accuracy cone +15%; heartbeat every 0.8 seconds. |
-| 160–179 | 5% chance per second of a 0.4-second stagger; screen vignette; no new stalk can begin. |
-| 180 | Panic lock for 3 seconds: cannot sprint, accuracy cone +35%, emits 30 noise; heart rate then falls toward target. |
-
-Light is functional survival equipment. `HogHunterLightSource` is the lantern's server-owned light emission, and the held lantern must provide a radius of 8 light at oil > 0, radius 4 at oil 1–5, and no light at oil 0. Drain is 1 oil point per 12 seconds while held or placed and lit. A player may extinguish it with the use action; extinguishing stops drain and removes the light-stress contribution after 20 ticks.
-
-### Damage, wounds, fractures, and treatment
-
-Incoming damage uses vanilla armor first, then the mod adds a state injury only when the final damage event is large enough. Handle `LivingIncomingDamageEvent` on the server and never apply injury from client animation.
-
-| Trigger | Result |
-|---|---|
-| Final hit damage ≥ 4 hearts | Add 1 wound if wounds < 3. |
-| Hog charge or boss tusk hit ≥ 6 hearts | Add 1 fracture if fracture < 2; knockback 0.8. |
-| Fall distance ≥ 6 blocks while fracture < 2 | Add 1 fracture. |
-| Wound count > 0 | Lose 0.5 heart every 12 seconds while not bandaged; cap at 1 heart remaining. |
-| Death | Drop expedition inventory and reset temporary state after respawn. |
-
-`hoghunter:bandage` removes one wound after a 3-second use action; `hoghunter:splint` removes one fracture after a 5-second use action. Damage, sprinting, or starting another use cancels treatment. A wound can be treated only when the player has at least 4 hearts, and a fracture can be treated only while standing still. A medkit removes one wound and one fracture but applies Weakness for 10 seconds.
-
-## 3. Corrupted hog roster
-
-All entities are server-side `Monster` subclasses under `com.hoghunter.entity`. Register each with `HogEntities.register(modBus, "<id>")` in a `DeferredRegister<EntityType<?>>` using `EntityType.Builder.of(<EntityClass>::new, MobCategory.MONSTER).sized(width, height).clientTrackingRange(range).build(new ResourceLocation("hoghunter", "<id>"))`. Exact entity IDs, physical sizes, and combat values are below.
-
-| ID / name | Role and silhouette | Health / armor | Damage | Speed | Spawn trigger | Special ability |
-|---|---|---:|---:|---:|---|---|
-| `boar_hog` / Burrower | Low 1.1×1.0 m body, oversized shovel snout; baseline hunter | 24 HP / 2 armor | 4 HP bite | 0.27 | Light level ≤7, Y≤48, player noise ≥25; group size 1–3 | **Headlong:** after 20 ticks of line-of-sight, charge 8 blocks; impact deals +2 HP and 0.6 knockback. Cooldown 8 s. |
-| `spore_hog` / Lanternback | 1.2×1.3 m hump with glowing fungal plates; area denial | 30 HP / 3 armor | 3 HP gore | 0.22 | Y≤16, air block has `hoghunter:spore_air`, light ≤8 | **Spore cloud:** emits a 4-block cloud for 6 s; players inside gain +12 BPM and Blindness I for 1 s every 2 s. Cooldown 14 s. |
-| `hook_hog` / Chainjaw | Tall 1.0×1.6 m head, four chain-like tusks; ranged puller | 20 HP / 1 armor | 2 HP hit + pull | 0.25 | Flooded galleries, player within 14 blocks, line of sight | **Grapple:** launches a 12-block hook; on hit pulls player 5 blocks and adds 20 noise. Cooldown 6 s. |
-| `screecher_hog` / Squealer | Thin 0.9×1.5 m body and split jaw; alarm support | 18 HP / 0 armor | 2 HP bite | 0.31 | After any hog dies within 24 blocks, 30% chance; never natural-spawns alone | **Screech:** 10-block radius pulse adds 25 BPM, summons one `boar_hog` if local hostile count <5, and disables sprint for 2 s. Cooldown 18 s. |
-| `ironback_hog` / Ironback | Broad 1.4×1.2 m plated back; slow armored bruiser | 48 HP / 8 armor | 6 HP tusk | 0.19 | Y≤-17, blackstone seam, light ≤5 | **Plated turn:** front damage is reduced by 60% while its back is toward the player; turning takes 12 ticks. Knockback resistance 0.8. |
-| `mire_hog` / Mire Hog | 1.3×1.0 m half-submerged body with dripping legs; ambusher | 34 HP / 2 armor | 5 HP bite | 0.24 | Waterlogged block or mud, Y≤-17, player crouching or heartRate ≥120 | **Mire vanish:** becomes invisible for 4 s and moves through water at 0.38 speed; reappears behind the nearest player within 8 blocks. Cooldown 16 s. |
-| `rootmother` / Rootmother | Boss: 2.8×2.6 m boar skull, root antlers, six legs | 260 HP / 10 armor | 8 HP tusk; 4 HP shockwave | 0.16 | One per world at `hoghunter:rootmother_arena`, after three tusks are offered | **Root call:** every 25 s summons two `boar_hog` and one `spore_hog`; **Tusk sweep:** 120° melee arc every 7 s; **Blackout:** at 50% HP, extinguishes lanterns in 16 blocks for 8 s and opens two root vents. |
-
-For natural spawning, use `SpawnPlacementRegisterEvent` with `SpawnPlacements.Type.ON_GROUND`, `Heightmap.Types.MOTION_BLOCKING_NO_LEAVES`, and a shared `HogSpawnRules` predicate. The predicate checks difficulty, Y band, light, local hostile count, and the trigger column above; it must reject peaceful difficulty. Boss spawning is a scripted server event, never a natural spawn.
-
-Each entity must expose a distinct `HogEntity` animation state (`idle`, `sniff`, `charge`, `hurt`, `death`) to the client. Their renderers and model layers are registered on `EntityRenderersEvent.RegisterRenderers` and `EntityRenderersEvent.RegisterLayerDefinitions`; no client class is referenced from common registration code.
-
-## 4. Hunter toolkit
-
-Items live under `com.hoghunter.item`; register them with `HogItems.ITEMS = DeferredRegister.create(Registries.ITEM, "hoghunter")`. Weapon use and durability are server-authoritative. The recipes below are shaped or shapeless JSON files in `data/hoghunter/recipes/` and use vanilla tags where possible.
-
-| Item | Combat values | Cooldown / durability | Recipe ingredients | Special mechanic |
-|---|---|---:|---|---|
-| `bolt_gun` | 9 HP per bolt; ignores 2 armor; 24-block effective range | 20 ticks; 128 durability | 3 iron ingots, 2 sticks, 1 string, 1 copper ingot | Holding sneak for 10 ticks steadies aim: +25% damage, but movement speed -70% while held. Bolt impact adds 10 noise. |
-| `silver_bolt_gun` | 14 HP per bolt; ignores 5 armor; 28-block range | 24 ticks; 192 durability | `bolt_gun`, 2 `hoghunter:purified_tusk`, 2 iron ingots, 1 amethyst shard | Charged shot (30 ticks) pins a non-boss hog for 2 s; charged shot consumes 2 ammo. |
-| `baited_snare` | 12 HP when triggered; 4-block trigger radius | Place cooldown 10 ticks; 16 uses | 4 string, 2 iron nuggets, 1 leather, 1 rotten flesh | Place on a full block; hogs path toward bait within 10 blocks. Trigger roots the hog for 5 s and creates 40 noise. Cannot root Rootmother. |
-| `field_lantern` | No damage; light radius 8 | Toggle 10 ticks; 256 durability; oil-powered | 4 iron nuggets, 1 glass pane, 1 copper ingot, 1 torch | Placeable or held. While held, reveals `hoghunter:spoor` particles within 8 blocks and makes Mire Hog visible. Can be thrown 8 blocks; thrown lantern emits radius 6 and breaks on impact. |
-| `mine_harpoon` | 16 HP on direct hit; 10 HP on pull impact | 30 ticks; 96 durability | 2 iron ingots, 1 chain, 1 tripwire hook, 1 stick | Hit a hog to pull it 6 blocks toward the player; hit a tagged anchor to pull the player 10 blocks. Adds 20 noise and cannot fire through blocks. |
-| `salt_shaker` | 3 HP to hogs; 0 HP to others | 15 ticks; 32 uses | 1 paper, 2 salt (`#hoghunter:salt`), 1 glass bottle | Creates a 3-block salt line for 12 s. Hogs crossing it are slowed 40% and cannot use special abilities for 3 s. |
-
-Ammo is `hoghunter:iron_bolt`, stack size 32. Bolt gun shots consume one loaded `ammo` and require one bolt item only when reloading; reload takes 30 ticks and fills up to 6 shots. The player cannot reload while sprinting, falling, or in a panic lock. `silver_bolt_gun` uses the same ammo and its charged shot consumes two.
-
-### Consumables and armor
-
-| Item | Recipe / stack | Use effect |
-|---|---|---|
-| `oil_can` | 1 iron ingot + 2 coal + 1 glass bottle; stack 4 | Adds 50 oil to `reserveOil`; using it on a lit lantern refills 50 oil immediately. |
-| `bandage` | 3 wool + 1 string; stack 8 | 3-second use; removes one wound. |
-| `splint` | 2 sticks + 1 string; stack 4 | 5-second use; removes one fracture. |
-| `field_medkit` | 1 bandage + 1 golden carrot + 1 honey bottle; stack 1 | 4-second use; restores 4 HP, removes one wound and one fracture, applies Weakness 10 s. |
-| `salt_ration` | 1 bread + 1 salt; stack 16 | Restores 3 hunger and reduces heartRate by 5 over 5 s. |
-
-`hunter_coat` is a four-slot armor set. Helmet: 2 leather + 1 iron ingot; chestplate: 8 leather + 2 iron ingots; leggings: 7 leather + 2 iron ingots; boots: 4 leather + 1 iron ingot. Armor values are 1/3/2/1, toughness 0, durability 165/240/225/195. The complete set grants 15% reduction to fall fracture chance, but no protection from direct damage. `ironback_harness` is a chestplate upgrade made from `hunter_coat` chestplate + 4 iron plates; it gives 5 armor and 0.1 knockback resistance but makes sprint noise +10.
-
-## 5. Progression and depth gates
-
-Progression is stored in `HogHunterData.unlockedTier` and awarded only when the player extracts the named evidence at camp. Evidence cannot be awarded by a client packet or by placing an item in a container.
-
-| Tier / depth | Unlock condition | Unlocks |
-|---|---|---|
-| 0 / camp | Start | Field lantern, bolt gun, iron bolts, bandage, shallow gate. |
-| 1 / Y≤16 | Extract 3 corrupted tissue from Shallow workings | Baited snare recipe, oil can recipe, Flooded galleries gate. |
-| 2 / Y≤-16 | Extract one hook tooth and one spore sac | Mine harpoon recipe, salt shaker recipe, silver bolt gun blueprint. |
-| 3 / Y≤-32 | Extract one iron plate and survive with at least one fracture treated | Hunter coat and ironback harness, The Root gate. |
-| 4 / Y≤-49 | Offer three marked tusks at the Root altar | Rootmother arena opens; boss loot table becomes active. |
-| 5 / boss cleared | Kill Rootmother and extract the black heart | Permanent camp fast travel to deepest cleared band; `hoghunter:root_heart` trophy. |
-
-The gate checks are deliberately evidence-based. A player may reach a lower Y coordinate through an accidental cave, but the mine generator continues to produce higher-tier hazards only after the corresponding gate flag is set. This prevents a lucky early tunnel from skipping the intended tool economy.
-
-## 6. Horror presentation and stalk system
-
-### Ambience triggers
-
-The client receives typed ambience events from the server, rather than polling proximity every frame. `HogAmbienceManager` selects a sound event from `assets/hoghunter/sounds.json` and plays it with `SoundSource.AMBIENT` at the supplied position. Events are rate-limited per player.
-
-| Trigger | Event | Limit |
-|---|---|---:|
-| No hostile visible for 45 s below Y=16 | Distant wet hoof scrape 18–32 blocks away | Once / 35 s |
-| Player mines a block tagged `#hoghunter/vein_blocks` | Tunnel groan and dust burst | Once / 12 s |
-| Oil drops below 10 | Breath behind player, no entity | Once / expedition |
-| HeartRate ≥140 for 8 s | Layered heartbeat and low-frequency rumble | Once / 20 s |
-| A hog dies | Distant answering squeal with 35% chance | Once / 10 s |
-| Rootmother below 75% HP | Arena root creak | Once / phase |
-
-Sound event IDs use the exact namespace `hoghunter:<event>`, with files under `assets/hoghunter/sounds/` and definitions in `assets/hoghunter/sounds.json`. The client must use a reduced-volume path when the player has the `options.dark` accessibility preference unavailable; the config `horrorAudioIntensity` still scales volume from 0.0 to 1.0.
-
-### “It Hunts You” stalk behavior
-
-The stalk is a timed director state, not a hidden permanently spawned monster. `HogStalkDirector` runs on the server every 20 ticks and has states `DORMANT`, `WATCHING`, `APPROACHING`, `REVEALED`, and `COOLDOWN`.
-
-It may start when all conditions hold: player is below Y=16; no hostile hog is within 16 blocks; `heartRate < 160`; `sanity ≤ 70` or oil ≤ 25; and at least 90 seconds have elapsed since the previous stalk. The director selects a valid spawn node 24–40 blocks away with two solid blocks of headroom and no direct line of sight.
-
-In `WATCHING`, the stalker is a non-colliding client presentation silhouette for 2–4 seconds, visible only at the edge of the player's camera. In `APPROACHING`, the server spawns one `boar_hog` with `stalkSpawn=true` at the selected node after a 1–3 second randomized delay. It receives speed 0.34, 40 HP, and a rule to break line of sight after 6 seconds if the player turns toward it. If it reaches 6 blocks, it becomes a normal Burrower and enters `REVEALED`; the player can then fight it. If it despawns after being seen, the cooldown is 75 seconds. The director never creates a second stalker while one is alive.
-
-### Sanity and hallucinations
-
-Sanity is not a death meter. It changes the reliability of what the player sees and hears:
-
-| Sanity | Effect |
-|---:|---|
-| 70–100 | No hallucinations. |
-| 40–69 | 1% per second chance of a false hoofstep; no gameplay collision. |
-| 20–39 | 2% per second chance of a client-only `hallucination_hog`; distorted audio pitch ±8%; false spoor particles. |
-| 1–19 | 4% per second chance of a client-only hallucination; 10% vignette opacity; inventory item names may flicker visually for ≤1 s. |
-| 0 | 3-second blackout and forced heartRate +20, then sanity resets to 15. |
-
-Hallucinations are explicitly client-only entities or particles and cannot damage, block, drop items, trigger advancement criteria, or alter pathfinding. Sanity decreases by 1 per 10 seconds below Y=16 while oil ≤10, by 5 when a screecher pulse hits, and by 8 when the player sees Rootmother. It recovers by 2 per 10 seconds in a lit safe room and by 10 on sleeping at camp.
-
-Screen effects are implemented as client overlays registered through `RegisterGuiLayersEvent`, with alpha derived from the synchronized state. Distorted audio is implemented by selecting alternate sound events, not by changing global volume. The mod must respect the vanilla `SoundSource` volume slider and provide a `horrorVisualIntensity` config from 0.0 to 1.0.
-
-### Death, scare, and authored failure
-
-When a player reaches 0 HP, the server emits `hoghunter:death_sting`, records the killer entity ID, and lets normal Minecraft death handling run. The client plays a 1.2-second authored failure sequence: lantern flicker, 6-frame silhouette, low-frequency hit, then the vanilla death screen. No forced jump scare uses a full-screen flash above 0.2 seconds; the flash is capped at 0.15 alpha and is disabled when `horrorVisualIntensity=0`.
-
-Three authored scare encounters are placed in mine templates:
-
-1. A blocked tunnel has fresh spoor and a lantern that extinguishes when approached; the stalk director starts only after the player crosses the exit marker.
-2. A safe room contains a harmless carcass. Interacting three times makes it emit a screech and removes the room's safe status for 30 seconds, teaching the player that safety is temporary.
-3. The Root altar presents the three tusk sockets. The third socket opens the arena, seals the exit for 45 seconds, and gives the player a clear audio cue before Rootmother spawns.
-
-These scares are authored in structure markers and server events. They never rely on an invisible damage event, a fake item loss, or a client packet that changes authoritative state.
-
-## 7. Difficulty configuration
-
-Expose a server-side TOML config at `config/hoghunter-server.toml` through `ModConfig.Type.SERVER` and `ModConfigEvent.Reloading`. Values are multipliers or bounded settings; all server gameplay reads a validated snapshot.
-
-| Key | Default | Allowed range | Applied to |
+| Id / name | HP / armor | Base melee | Signature behavior |
 |---|---:|---:|---|
-| `enemyHealthMultiplier` | 1.0 | 0.5–3.0 | All non-boss hog max health; Rootmother uses the same multiplier. |
-| `enemyDamageMultiplier` | 1.0 | 0.5–2.5 | Melee, ranged, and ability damage. |
-| `enemySpeedMultiplier` | 1.0 | 0.75–1.35 | Movement speed after attribute setup. |
-| `spawnDensityMultiplier` | 1.0 | 0.25–2.0 | Per-band hostile cap and spawn roll, never boss count. |
-| `oilDrainMultiplier` | 1.0 | 0.25–3.0 | Lantern drain interval inverse. |
-| `heartbeatStressMultiplier` | 1.0 | 0.0–2.0 | Positive BPM contributions only; safe-room reduction is unchanged. |
-| `stalkCooldownSeconds` | 90 | 30–300 | Minimum time between stalk starts. |
-| `stalkEnabled` | true | boolean | Enables the director. |
-| `sanityEffectsEnabled` | true | boolean | Enables hallucination and distortion presentation; sanity still tracks if false. |
-| `horrorVisualIntensity` | 1.0 | 0.0–1.0 | Client visual overlay alpha, synced from client config when available. |
-| `horrorAudioIntensity` | 1.0 | 0.0–1.0 | Client horror event volume multiplier. |
+| `boar_hog` / Burrower | 24 / 2 | 4 HP | A visible windup precedes a short committed charge; impact and cooldown prevent continuous charge damage |
+| `spore_hog` / Lanternback | 30 / 3 | 3 HP | A timed four-block cloud pulses blindness and heart-rate pressure |
+| `hook_hog` / Chainjaw | 20 / 1 | 2 HP | A twelve-block line-of-sight pull changes player motion and adds noise |
+| `screecher_hog` / Squealer | 18 / 0 | 2 HP | A ten-block alarm raises pressure, locks sprint briefly, and can call a bounded reinforcement |
+| `ironback_hog` / Ironback | 48 / 8 | 6 HP | Front armor reduces incoming damage; its turn gives a rear attack opportunity |
+| `mire_hog` / Mire Hog | 34 / 2 | 5 HP | A water-triggered vanish ends with a collision-checked position behind a target; lanterns reveal it |
+| `rootmother` / Rootmother | 260 / 10 | 8 HP | Combat-only reinforcement calls, a 120-degree frontal sweep, and a latched half-health blackout phase |
 
-The config must be clamped on load and logged with the final values. Changing difficulty does not retroactively heal, refill oil, despawn hogs, or reroll progression. A server operator can tune pressure without changing the authored progression or the boss's attack phases.
+Five species participate in natural Overworld spawning through biome modifiers and placement
+predicates. Screechers are encounter reinforcements; Rootmother is summoned by the ritual. Spawn
+predicates must respect vanilla's minimum distance from players; the original fourteen/sixteen
+block proximity conditions could never work as natural-spawn requirements.
 
-## 8. Required data and implementation map
+Hogs reject creative/spectator targets. Their abilities honor timed salt suppression and snares;
+controls do not accidentally immobilize or pull the boss as though she were a normal hog. Ability
+cooldowns persist with entity state. Calls and nests have population bounds, collision checks,
+and player/difficulty conditions.
 
-The implementation team should create the following later; this document intentionally does not create them:
+Typical ability timings are: Burrower twenty-tick windup, ten-tick charge, and 160-tick cooldown;
+Lanternback twenty-tick windup, 120-tick cloud, and 280-tick cooldown; Chainjaw twelve-tick windup,
+ten-tick pull, and 120-tick cooldown; Squealer twenty-tick windup and 360-tick cooldown; Mire Hog
+eighty-tick vanish and 320-tick cooldown. Rootmother's sweep has a twenty-tick tell and 140-tick
+cycle, her call uses 500 combat ticks, and blackout lasts 160 ticks. The source controls precise
+state transitions and interrupt behavior.
 
-| Concern | Planned location / API |
+Target acquisition combines sight, short-range scent, and noise. A hog can notice a nearby
+wounded hunter or hear a loud one even when line of sight is absent. Population bounds and a
+limited lost-contact window constrain encounters. Balance values retain the original identities;
+no claim of balanced 25–35 minute runs is made without survival playtesting.
+
+## 5. Toolkit controls
+
+| Item | Action | Current behavior |
+|---|---|---|
+| Bolt gun | Right-click | Immediate shot; one inventory bolt; 24-block range; 9 base HP; 20-tick cooldown |
+| Bolt gun | Sneak and hold use for ten ticks | Steady shot for 25% extra damage |
+| Silver bolt gun | Hold use for thirty ticks | Charged shot; two bolts; 14 base HP; pins an eligible non-boss hog for forty ticks |
+| Silver bolt gun | Release early | Normal one-bolt shot |
+| Mine harpoon | Right-click at a hog or tagged anchor | Damage/pull or traversal; respects solid blocks and destination collision; thirty-tick cooldown |
+| Salt shaker | Use on supported ground | A perpendicular three-block line lasting twelve seconds; damages, slows, and suppresses crossing hogs |
+| Baited snare | Place on supported ground | Arms after twenty ticks, attracts nearby hogs, triggers within four blocks with line of sight, deals twelve HP and roots for five seconds |
+| Field lantern | Right-click while held | Toggle the personal visibility aid; usable in offhand |
+| Oil can / medicine | Hold use | Timed refill or treatment, consumed only on successful use |
+
+Untriggered snares persist as block entities and can be recovered. Salt lines expire and do not
+produce an unlimited supply of salt block items. Weapons spend inventory and durability on the
+server; line-of-sight ray tests prevent hits through solid walls. Armor piercing is an actual
+combat behavior rather than an ignored argument.
+
+The four registered armor ids are `hoghide_helmet`, `hoghide_chestplate`, `hoghide_leggings`, and
+`hoghide_boots`. Their defense is 1/3/2/1 with dedicated material/texture wiring. The ironback
+harness is a five-defense chestpiece with 0.1 knockback resistance and increased sprint noise.
+
+## 6. Current scope limits
+
+| Original campaign ambition | Current scope |
 |---|---|
-| Common bootstrap | `com.hoghunter.HogHunter` with `IEventBus modBus`; register `HogItems.ITEMS`, `HogEntities.ENTITIES`, attachments, payloads, and config. |
-| Registries | `com.hoghunter.registry.HogItems`, `HogEntities`, `HogBlocks`, `HogSounds`; `DeferredRegister.create(Registries.ITEM, "hoghunter")` and matching registry keys. |
-| Entity attributes | `EntityAttributeCreationEvent`; `event.put(HogEntities.BOAR_HOG.get(), Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 24.0).add(Attributes.MOVEMENT_SPEED, 0.27).add(Attributes.ATTACK_DAMAGE, 4.0).build())`, with per-entity exact table values. |
-| Spawn rules | `SpawnPlacementRegisterEvent` plus `RegisterSpawnPlacementsEvent` equivalent for the installed NeoForge mappings; verify the exact event name against the 21.1.253 API before coding. |
-| Items and recipes | `src/main/java/com/hoghunter/item/`; `src/main/resources/data/hoghunter/recipes/*.json`; item models at `src/main/resources/assets/hoghunter/models/item/*.json`; language at `assets/hoghunter/lang/en_us.json`. |
-| Entity data | Tags at `data/hoghunter/tags/entity_types/` and loot at `data/hoghunter/loot_tables/entities/`; model textures at `assets/hoghunter/textures/entity/`. |
-| Sounds | `assets/hoghunter/sounds.json` and `assets/hoghunter/sounds/*.ogg`; register `SoundEvent` instances in `HogSounds`. |
-| Mine content | Structures under `data/hoghunter/structure/`, templates under `data/hoghunter/structures/`, and configured/template placements registered through the 1.21.1 worldgen APIs. |
-| Client hooks | `com.hoghunter.client.HogHunterClient`; register entity renderers, GUI layers, key mappings, and client payload handlers only from the client setup event. |
+| Generated five-band mine, camp buildings, objectives, safe rooms, authored scare rooms | Ordinary caves, ore/nests, player-built camp/room, extraction and ritual altar |
+| Separate loaded ammunition, six-shot magazine, reload action, blueprint unlock UI | Inventory bolts and standard Minecraft recipes |
+| Placed/thrown lantern with true radius light | Held/offhand night vision and server-authorized reveal/fuel |
+| Sealed arena exits, root vents, generated boss chamber | Prepared room, encounter reservation, reinforcement/sweep/blackout phases |
+| Permanent camp fast travel and world-wide progression locks | Permanent player tiers, usable depth gates, final root-heart trophy |
+| Complete authored hallucination/death cinematics and every planned scare | State-driven HUD/audio/ability feedback; see client implementation and acceptance record |
+| A separate multi-phase stalk director and client-only stalking silhouettes | Ordinary hog targeting, noise/scent pressure, and bounded encounter reinforcements; no director |
 
-All gameplay numbers in this document are initial balance values. They belong in named constants or server config, with boss phase constants kept separate from global multipliers so that balance changes do not alter save compatibility.
+These limits preserve the intended hunting identity while giving each implemented system a
+survival acquisition and use path. They must remain visible in release notes instead of being
+reclassified as fully implemented.
+
+## 7. Configuration
+
+`HogHunterConfig` provides bounded enemy health/damage/speed, spawn density, oil drain, heartbeat
+stress, and visual/audio settings. Inert stalk toggles were removed because no director consumes
+them. Config reloads must not heal entities or reroll progress.
+Test intensity zero and nondefault enemy/fuel settings as part of the manual release checks.

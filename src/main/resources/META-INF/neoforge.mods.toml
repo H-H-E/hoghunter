@@ -15,13 +15,13 @@ corrupted hogs, manage your heartbeat and light, and try to make it back out.
 [[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"
-versionRange="[21.1.0,)"
+versionRange="[${neoforge_version},21.2)"
 ordering="NONE"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="minecraft"
 type="required"
-versionRange="[1.21.1,1.22)"
+versionRange="[${minecraft_version},1.21.2)"
 ordering="NONE"
 side="BOTH"

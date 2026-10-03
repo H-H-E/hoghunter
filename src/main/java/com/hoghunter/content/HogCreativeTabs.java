@@ -24,6 +24,13 @@ public final class HogCreativeTabs {
                         output.accept(HogItems.HUNTER_COAT_HELMET.get()); output.accept(HogItems.HUNTER_COAT_CHESTPLATE.get());
                         output.accept(HogItems.HUNTER_COAT_LEGGINGS.get()); output.accept(HogItems.HUNTER_COAT_BOOTS.get());
                         output.accept(HogItems.IRONBACK_HARNESS.get());
+                        output.accept(HogItems.SALT.get()); output.accept(HogItems.PURIFIED_TUSK.get());
+                        output.accept(HogItems.CORRUPTED_TISSUE.get()); output.accept(HogItems.HOOK_TOOTH.get());
+                        output.accept(HogItems.SPORE_SAC.get()); output.accept(HogItems.IRON_PLATE.get());
+                        output.accept(HogItems.MARKED_TUSK.get()); output.accept(HogItems.ROOT_HEART.get());
+                        output.accept(HogItems.ROOT_ALTAR_BLOCK.get()); output.accept(HogItems.DEPTH_GATE_BLOCK.get());
+                        output.accept(HogItems.CORRUPTED_ORE_BLOCK.get()); output.accept(HogItems.HOG_NEST_BLOCK.get());
+                        output.accept(HogItems.SALT_LINE_BLOCK.get());
                     }).build());
 
     public static void register(IEventBus modBus) { TABS.register(modBus); }

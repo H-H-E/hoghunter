@@ -1,244 +1,239 @@
-# Hog Hunter verification, testing, and runtime proof
+# Hog Hunter verification contract
 
-This plan is for Minecraft Java **1.21.1**, NeoForge **21.1.253**, Java **21**, mod id `hoghunter`, and package root `com.hoghunter`. It is a verification plan only. It does not create the Gradle project, Java source, JSON, NBT, models, sounds, or other assets.
+Target: Minecraft Java **1.21.1**, NeoForge **21.1.253**, **JDK 21**, Gradle **8.12**.
+The current evidence and environmental limits belong in [`docs/HANDOFF.md`](../docs/HANDOFF.md).
+Commands in this document are procedures, not claims that they have already passed.
 
-The proof standard is deliberately strict: a successful compilation proves that Java and resources are structurally consumable; a successful GameTest proves selected server-side behavior inside Minecraft; a dedicated-server smoke test proves the packaged mod loads and responds to commands; a client run is required for rendering and audio. None of the earlier gates is a substitute for the later one.
+## What each gate proves
 
-## 1. Required Gradle gates
+| Gate | Positive evidence | Does not prove |
+|---|---|---|
+| Resource verifier | Committed data/asset references and checked formats are internally consistent | Vanilla codec acceptance, rendering, gameplay, sound quality |
+| Template check | The committed GameTest NBT matches its deterministic generator | Tests executed |
+| Compile | Final Java source compiles against the target APIs | Registry loading, worldgen, networking, visual correctness |
+| Build | Final artifact was produced and configured checks passed | A client or server can load the artifact |
+| Datagen | The mod's data-run bootstrap completes | Hand-authored recipes/assets were loaded or validated |
+| GameTests | The named required server assertions passed in Minecraft | Human controls, screen presentation, real audio, balance |
+| Development server | A dedicated server loads the development classpath and responds | The packaged JAR was the artifact loaded |
+| Packaged server | A separate server loads the exact packaged JAR and responds | Client resource loading |
+| Client | A real Minecraft client loads and the observed scenarios work | Unobserved scenarios or all hardware configurations |
 
-The project root for every command below is the repository root, i.e. wherever you cloned this
-repository:
+Do not carry the old handoff's five passing tests forward as evidence for changed source. The
+original tests also checked only entity creation, twenty ticks of survival, a direct damage call,
+block placement/removal, and one block entity. They did not establish the survival loop.
 
-```powershell
-git clone https://github.com/H-H-E/hoghunter.git
-cd hoghunter
+## 1. Reproducible local checks
+
+Use a clean checkout, JDK 21 on `PATH`, and the committed wrapper. On Linux/macOS:
+
+```bash
+java -version
+./gradlew --version
+python3 tools/verify_resources.py
+python3 tools/make_gametest_structure.py --check
+./gradlew compileJava --no-daemon --console=plain
+./gradlew build --no-daemon --console=plain
+./gradlew runData --no-daemon --console=plain
+./gradlew runGameTestServer --no-daemon --console=plain
 ```
 
-The preferred invocation is the project wrapper (`.\gradlew.bat`) so the project pins its own Gradle distribution. That is how the committed gates below are meant to be run. If the wrapper is ever missing, generate it once from any Gradle 8.12 installation (`gradle wrapper`) and commit the resulting `gradlew`, `gradlew.bat`, and `gradle/wrapper/` files.
-
-```powershell
-.\gradlew.bat --version
-.\gradlew.bat compileJava --stacktrace
-.\gradlew.bat build --stacktrace
-.\gradlew.bat runData --stacktrace
-```
-
-Run them separately and stop on the first non-zero exit code. Record the command, UTC timestamp, exit code, and the complete console output under a proof directory such as `verification\2026-10-03T...\`. Do not call a build “passing” because the JAR exists: the exit code must be zero and the expected warnings must be reviewed.
-
-`compileJava` catches Java syntax, imports, generics, access-level errors, wrong NeoForge/Minecraft method signatures, and accidental client-only references from common/server code. It does not prove resources, data loading, registry contents, AI behavior, combat, or rendering.
-
-`build` catches the complete project packaging path: resource processing, compilation, the mod JAR task, and any configured verification tasks. It must produce `build\libs\hoghunter-<version>.jar` (the exact version comes from `gradle.properties`). Inspect the JAR from this gate; do not inspect an old manually copied JAR.
-
-`runData` catches datagen bootstrap failures, invalid codec/registry data generation, and generator crashes. If the project uses hand-authored assets or data, `runData` cannot validate their contents by itself; it still must pass because the mod's data-generation entry point must load cleanly. Generated output must be compared with the intended `src\main\resources` layout and must not silently overwrite hand-authored files.
-
-Before any gate, verify that the build is using the intended toolchain:
+On Windows PowerShell:
 
 ```powershell
 java -version
 .\gradlew.bat --version
+python tools/verify_resources.py
+python tools/make_gametest_structure.py --check
+.\gradlew.bat compileJava --no-daemon --console=plain
+.\gradlew.bat build --no-daemon --console=plain
+.\gradlew.bat runData --no-daemon --console=plain
+.\gradlew.bat runGameTestServer --no-daemon --console=plain
 ```
 
-The Java output must identify a 64-bit Java 21 VM. The Gradle output must show Gradle 8.12 or the wrapper-pinned equivalent, and the NeoForge dependency must resolve to `21.1.253`.
+Stop and investigate a nonzero result before describing a later gate as passing. Record the exact
+command, UTC time, exit code, and complete output. A previous JAR in `build/libs` is not a successful
+new build. First-time builds require the Gradle, NeoForge, Maven, and Mojang dependencies.
 
-## 2. NeoForge GameTest setup
+The resource verifier is Python standard-library code. Asset regeneration has additional authoring
+dependencies; see [`03-assets.md`](03-assets.md). Those dependencies are not needed to load the
+committed PNG/OGG assets in Minecraft.
 
-Use the 1.21.1 `net.minecraft.gametest.framework` API. The test source belongs in the normal main source set so the `gameTestServer` run can load it:
+This repository currently registers **zero datagen providers**. `runData` proves the data-run
+bootstrap only; the resource verifier and loaded-recipe/tag/worldgen GameTests check the
+hand-authored data. A zero-millisecond provider run is not a recipe validation result.
+
+## 2. Static resources and GameTest structure
+
+`tools/verify_resources.py` checks strict JSON parsing, duplicate keys, discovered registry ids,
+local asset/data references, English names, sound definitions/files/subtitles, legacy data
+directories, crafting shapes/results, PNG chunk integrity/frame ranges, OGG signatures, and the
+GameTest NBT. It is a structural check with an explicit scope; it is not a Minecraft codec runner
+or an image-quality test.
+
+The template path is exactly:
 
 ```text
-src\main\java\com\hoghunter\gametest\HogHunterGameTests.java
-src\main\resources\data\hoghunter\structure\hog_combat_test.nbt
+src/main/resources/data/hoghunter/structure/empty.nbt
 ```
 
-The structure is an actual Minecraft structure template, not a JSON description. It should contain a small sealed stone test room, a solid floor, a safe player/test origin, and any required interaction block. It must be saved as `data/hoghunter/structure/hog_combat_test.nbt`; the namespace and path are case-sensitive. The test class is in `com.hoghunter.gametest` but the template is addressed through the `hoghunter` namespace.
+`tools/make_gametest_structure.py` produces a **33 × 8 × 33** template with a complete stone floor
+and explicit air. The wide template separates tests with abilities reaching up to sixteen blocks.
+The independent decoder in the resource verifier checks the palette, bounds, unique positions,
+floor, and complete volume. `--check` compares bytes without rewriting the committed file.
 
-Register the test class with the mod id:
+The initial template writer incorrectly nested anonymous compounds inside list elements. Both
+the writer and its output must be checked; accepting a parseable NBT root alone misses this defect.
 
-```java
-@GameTestHolder("hoghunter")
-public final class HogHunterGameTests {
-    @GameTest(template = "hog_combat_test", timeoutTicks = 200, setupTicks = 10, required = true)
-    public static void hogCombat(GameTestHelper helper) {
-        // test body; every success path must call helper.succeed()
-    }
-}
+The structure block also applies a vertical offset. Template-local floor Y=0 appears at
+GameTest-helper-relative Y=1; standing fixtures use helper-relative **Y=2**. Do not put short
+entities at helper Y=1: their eyes/cloud origin may be inside the floor while taller entities
+appear to work. `HogTestSupport` checks collision clearance to catch this fixture error early.
+
+## 3. Runtime GameTests
+
+Test sources live in `src/main/java/com/hoghunter/test/`. They are discovered through
+`@GameTestHolder("hoghunter")`, use `@PrefixGameTestTemplate(false)`, and explicitly name
+`templateNamespace = "hoghunter", template = "empty"`. Tests must not depend on a nonexistent
+vanilla empty template.
+
+The entity registry roster is:
+
+| Registry id | Entity class |
+|---|---|
+| `hoghunter:boar_hog` | `BoarHogEntity` |
+| `hoghunter:spore_hog` | `SporeHogEntity` |
+| `hoghunter:hook_hog` | `HookHogEntity` |
+| `hoghunter:screecher_hog` | `ScreecherHogEntity` |
+| `hoghunter:ironback_hog` | `IronbackHogEntity` |
+| `hoghunter:mire_hog` | `MireHogEntity` |
+| `hoghunter:rootmother` | `RootmotherEntity` |
+
+The current source contains **39 tests**:
+
+| Source under `src/main/java/com/hoghunter/test/` | Tests | Scope |
+|---|---:|---|
+| `HogHunterGameTests.java` | 5 | Seven entity registries/attributes, live AI tick, incoming damage, block placement, block entity |
+| `HogDataGameTests.java` | 8 | Missing/malformed NBT, copy/serialization, attachment save, death policy, overlapping effects, payload codec, partial oil drain |
+| `HogAbilityGameTests.java` | 12 | Charge, cloud, grapple/occlusion, screech/cap, directional armor, Mire duration/collision, boss arc/phase/call, vanilla save state |
+| `HogItemGameTests.java` | 11 | Gun ammo/charge, invalid ammo, timed treatment/cancel, medkit cap, oil/lantern, harpoon wall, salt expiry, snare save/trigger, gate collision, surface extraction |
+| `HogResourceGameTests.java` | 3 | All 21 recipe registrations and sample crafting, actual tags/worldgen registries, ore drops and Silk Touch |
+
+The exact test methods and runtime summary remain authoritative as the suite changes. An
+additional test method is not a passing test until the server executes it. Deep ritual
+interaction, client delivery, authenticated multiplayer, and a full survival run retain the
+manual checks described below.
+
+Use controlled positions, explicit preconditions, and mock players where the framework supports
+them. Check observable effects such as health, movement, state, inventory, or collision. Do not
+substitute direct state assignment for exercising the interaction under test. Test randomness
+through deterministic prerequisites and bounds; avoid requiring a specific random spawn roll or
+an exact pathfinding tick. Delayed checks use game ticks, not wall-clock sleeps.
+
+A GameTest server must exit zero and report that all required tests passed. Preserve any failure
+report and include the failing method; do not suppress errors or turn failed assertions into
+success. Mock-player tests establish server logic, not mouse/key handling or a remote client's
+rendering.
+
+## 4. Dedicated-server check
+
+The unattended helper runs an isolated loopback server, waits for readiness, verifies command
+results, and stops cleanly:
+
+```bash
+python3 tools/smoke_server.py --timeout 240
 ```
 
-The important exact behavior is the annotation, not the class name. With `@GameTestHolder("hoghunter")` and `template = "hog_combat_test"`, the template is resolved from `data/hoghunter/structure/hog_combat_test.nbt`; if `template` is omitted, the lower-case method/class naming convention can produce a different path. Keep the explicit template to make resource review deterministic.
+It creates a new disposable `run/verification-server-<timestamp>-<pid>` world, writes the test EULA
+acknowledgement, uses console input rather than RCON, and stores `server.log`, `commands.txt`, and
+`assertions.json` under `verification/server` by default. It verifies all seven summons, a numeric
+health decrease, block placement, and save/stop. It does not claim an outgoing-combat or player
+interaction test; those are GameTest/client scenarios. `--output` selects an evidence directory.
 
-The test method must be `public static void` and accept `GameTestHelper`. Use `helper.absolutePos(relativePos)` when a test needs a world position, `helper.runAfterDelay(ticks, runnable)` for delayed assertions, and `helper.succeed()` only after all assertions have passed. A condition that is expected to become true later belongs in `helper.succeedWhen(runnable)` or `helper.succeedOnTickWhen(tick, runnable)`. Failures should throw through the framework's assertion helpers rather than being caught and converted to a success.
+For an interactive development server, prepare a disposable world and accept the Minecraft EULA
+for that environment. The run configuration already supplies `--nogui`:
 
-If the project chooses event registration instead of annotation discovery, register the class on the mod event bus with `RegisterGameTestsEvent` in a listener such as `com.hoghunter.HogHunterGameTestRegistration`:
-
-```java
-@SubscribeEvent
-public static void registerTests(RegisterGameTestsEvent event) {
-    event.register(HogHunterGameTests.class);
-}
+```bash
+./gradlew runServer --no-daemon --console=plain
 ```
 
-Do not use both approaches for the same class. The simpler required route is `@GameTestHolder("hoghunter")`, which is automatically enabled for the mod namespace by the standard run configuration. In `build.gradle`, the `gameTestServer` run must have `setForceExit false`; otherwise NeoGradle's forced process exit can make a successful test server appear as a Gradle failure. The run must be a `gameTestServer` type, and the project should set `neoforge.enabledGameTestNamespaces` to `hoghunter` when isolating this mod's tests.
+Wait for the `Done (` readiness marker with a bounded timeout. Send commands through console
+stdin or an intentionally configured local test connection. Do not assume readiness after a fixed
+sleep. Query each summoned entity's UUID/type, record initial health, apply controlled damage,
+then query health again. Stop with `stop` and require a clean process exit.
 
-Run the full in-game test suite with:
+`cmds.txt` is a **manual client visual setup**, intended for a disposable test world with a joined
+player. It is not an unattended dedicated-server proof script. A command targeting a missing
+player is a failed step.
 
-```powershell
-& $gradle runGameTestServer --stacktrace
+For packaged proof, prepare a separate NeoForge 21.1.253 server and put the exact just-built mod
+JAR in its `mods/` directory. The development run uses source/class directories and must be
+reported as development-server proof. Keep credentials, EULA acknowledgements, world saves,
+runtime properties, and caches out of the source archive.
+
+## 5. JAR and log checks
+
+Inspect the exact JAR produced by the final build:
+
+```bash
+jar tf build/libs/hoghunter-0.1.0.jar
 ```
 
-The test server's exit code is the number of required failed tests. A zero exit code is required. The log must contain the named test completion and no `FAILED`/`GameTestAssertException` lines. Save the full output, including the final exit code, as the GameTest proof artifact. A successful `runGameTestServer` is server-side proof only; it does not prove a renderer, model, texture, animation, sound event, or client input path.
-
-### Required GameTests
-
-Freeze the entity registry names before implementation. This plan uses the required test roster `hoghunter:boar_hog`, `hoghunter:brute_hog`, and `hoghunter:alpha_hog`; if the design roster changes, update every registry, summon command, GameTest, and acceptance record together. Do not leave a test claiming to cover an entity that is absent from the final registry.
-
-Use separate required tests, or one required test with clearly labelled phases, for the following:
-
-1. **Registry and spawn.** Resolve each `HogEntities` holder and assert it is non-null; create each entity through its registered `EntityType` on the `ServerLevel`, place it at a known relative position, and assert `level.getEntitiesOfClass(HogEntity.class, ...)` contains the expected registered type. Also assert each entity is alive and has the expected initial max health. This catches a registry holder that exists but creates the wrong class or wrong type.
-2. **AI.** Spawn a hog and a stationary target mob in the structure room. Give the hog enough room and at least 80 ticks. Assert its position changes toward the target or that it enters the intended attack range, according to the actual AI contract. Do not assert a particular path node or exact tick; assert observable behavior. If the AI is intentionally dormant in daylight or outside a trigger, construct the trigger in the template and assert the dormant-to-active transition explicitly.
-3. **Combat.** Record `float before = hog.getHealth()`, make the target close enough for the hog's attack goal, wait for the attack window, and assert the target's health decreased or its hurt timestamp changed. Then damage the hog with `hog.hurt(level.damageSources().generic(), 1.0F)` and assert its health decreased. A test that only calls `hurt` and never checks a changed value is not a combat proof.
-4. **Block interaction.** Put the exact Hog Hunter block used by the mechanic in the NBT template, obtain its `BlockState` at a relative position, and invoke the supported interaction path with a `FakePlayer` only if the block's contract is server-side. Otherwise use the registered block's `useItemOn`/`useWithoutItem` path with a real test player supplied by the GameTest environment. Assert the block state, block entity state, or inventory result changed as designed. Also assert that an invalid tool/item leaves the state unchanged. Do not test by directly mutating the block state; that bypasses the interaction code.
-
-Keep each test deterministic: no random seed assertions, no wall-clock sleeps, no dependence on a pre-existing world, and no `/summon` command inside a GameTest when direct registry construction can test the same behavior. Use a fixed structure and explicit positions. If a test depends on a sound or visual effect, record that dependency as a client test rather than pretending GameTest can hear or see it.
-
-## 3. Headless dedicated-server smoke proof
-
-The dedicated-server test uses the generated development run, not a single-player integrated server. First accept the development EULA in the run directory and disable authentication for a local test account:
-
-```powershell
-New-Item -ItemType Directory -Force -Path '.\run\server' | Out-Null
-Set-Content -Path '.\run\server\eula.txt' -Value 'eula=true'
-```
-
-The future `server` run must use `gameDirectory = project.file('run/server')`. After the first launch, edit `run\server\server.properties` so it contains `online-mode=false`, `enable-rcon=true`, `rcon.port=25575`, and a test-only `rcon.password` that is never committed. Keep `server-port` at a free local port, preferably `25565` for the standard proof.
-
-The exact development launch command is:
-
-```powershell
-.\gradlew.bat runServer --args='--nogui' --stacktrace
-```
-
-`--nogui` is a Minecraft server program argument. `runServer` is the NeoGradle/ModDevGradle run task and must be executed from the project root so the development classpath loads the source mod. For a packaged proof after `build`, run a separately prepared NeoForge server whose `mods` directory contains the exact JAR under test; do not call the development classpath proof a packaged-server proof.
-
-### Automated PowerShell smoke script behavior
-
-Create the smoke script later at `verification\run-dedicated-smoke.ps1` (the script is implementation work, not part of this planning deliverable). It must:
-
-1. Start `gradle.bat runServer --args=--nogui` with `System.Diagnostics.ProcessStartInfo`, `WorkingDirectory` set to the project root, and stdout/stderr redirected. Do not use a fixed `Start-Sleep` as the readiness condition.
-2. Append every output line with an ISO-8601 timestamp to `verification\<run-id>\server.log` and mirror it to the PowerShell host.
-3. Wait until the output contains the exact readiness marker `Done (` from the server log. Fail after a bounded timeout such as 180 seconds and include the last 100 log lines in the failure report.
-4. Send commands through redirected standard input, one command per line, and wait for evidence in the captured output. The minimum command sequence is:
-
-```text
-gamerule commandBlockOutput true
-gamerule keepInventory true
-time set day
-tp SmokeTester 0 80 0
-summon hoghunter:boar_hog 0 80 0 {PersistenceRequired:1b}
-summon hoghunter:brute_hog 3 80 0 {PersistenceRequired:1b}
-summon hoghunter:alpha_hog 6 80 0 {PersistenceRequired:1b}
-data get entity @e[type=hoghunter:boar_hog,limit=1,sort=nearest]
-data get entity @e[type=hoghunter:brute_hog,limit=1,sort=nearest]
-data get entity @e[type=hoghunter:alpha_hog,limit=1,sort=nearest]
-```
-
-The exact NBT is optional only if the entity does not use `PersistenceRequired`; if it is sent, the server must accept it. The assertions must be based on command output, not on the absence of a crash. Each `data get entity` response must identify the requested type and an entity UUID. If no console player named `SmokeTester` exists, the script must create one through the approved test setup or use a local RCON client; a teleport command targeting a nonexistent player is a failed step, not a pass.
-
-5. Prove damage through a controlled server command and query. The script may use a temporary invulnerable target or a test player, but the operation must be observable. A robust command sequence is:
-
-```text
-summon minecraft:armor_stand 0 80 2 {Invulnerable:0b,NoGravity:1b,Tags:["hoghunter_smoke_target"]}
-data get entity @e[type=minecraft:armor_stand,tag=hoghunter_smoke_target,limit=1]
-```
-
-Then place the target within the hog's actual aggro range, wait at least the AI acquisition/attack budget (for example 200 ticks), and query the target with `data get entity ... Health`. The pre-attack health and post-wait health must be parsed as numbers; post-wait must be lower. If the designed attack only damages players, teleport `SmokeTester` into range and use `data get entity SmokeTester Health`, with `gamemode survival SmokeTester` set first. If the designed attack requires a special trigger, the smoke script must issue that trigger and record it.
-
-6. Assert the reverse combat path by issuing a damage command that targets the hog, for example:
-
-```text
-damage @e[type=hoghunter:boar_hog,limit=1,sort=nearest] 1 minecraft:generic
-data get entity @e[type=hoghunter:boar_hog,limit=1,sort=nearest] Health
-```
-
-The script must compare the recorded initial hog health with the post-damage value. If the hog is immune to `generic`, use the documented damage source that should hurt it and record that choice in the smoke output.
-
-7. Stop cleanly by sending `stop`, wait for process exit, and fail if the process does not exit within a bounded timeout. Save `server.log`, `commands.log`, `assertions.json` or `assertions.txt`, the Gradle exit code, and the final process exit code under the same run directory. The script's own exit code must be zero only if every assertion passed and the server stopped cleanly.
-
-Console stdin is the preferred no-extra-dependency route. RCON is an acceptable alternative if stdin is unreliable, using an explicitly pinned RCON client and the password from the uncommitted test properties. Never print the RCON password. The server log must show `hoghunter` loading without a registry exception, and the command responses must show all three entity identifiers and numeric health changes.
-
-## 4. Client rendering proof and its limit
-
-The actual client proof is a separate run:
-
-```powershell
-& $gradle runClient --stacktrace
-```
-
-On Windows, an offscreen proof is feasible only if the machine has a working graphics driver and the Java client can create an OpenGL context under the selected display/session. The practical route is an interactive or virtual-display session with the client launched from `runClient`, then an automation driver such as Chrome DevTools is not applicable because this is a native LWJGL window. Capture the client log, the window/display mode, the exact world/commands used, and screenshots or video of every hog model, animation state, particle, block model, item model, and sound-triggering interaction.
-
-Do not claim headless rendering proof when the client cannot create a real graphics context. Windows service sessions, RDP sessions with no usable GPU context, or a CI worker that only runs the dedicated server prove nothing about model baking, texture binding, animation, particles, post-processing, or audio. In that case, state exactly: “Dedicated-server and GameTest proof passed; client rendering/audio proof was not run because the Windows environment could not create a usable LWJGL/OpenGL context.” A human launching the client on a supported desktop then remains a required acceptance step.
-
-For an actual client pass, verify at minimum: the title screen reaches the world without a mod-loading error; `/summon hoghunter:boar_hog`, `/summon hoghunter:brute_hog`, and `/summon hoghunter:alpha_hog` each render with the intended model and texture; idle, walk, attack, hurt, and death states do not show missing-model geometry; the interaction block has its model, particles, and sound; and `latest.log` contains no `Missing model`, `Unable to load texture`, `Unable to play unknown soundEvent`, or renderer exception lines.
-
-## 5. JAR and log inspection
-
-After `build`, inspect the exact JAR path reported by Gradle:
-
-```powershell
-$jar = Get-ChildItem '.\build\libs\hoghunter-*.jar' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-jar tf $jar.FullName | Set-Content '.\verification\jar-contents.txt'
-Select-String -Path '.\verification\jar-contents.txt' -Pattern 'META-INF/neoforge.mods.toml','assets/hoghunter/','data/hoghunter/','com/hoghunter/'
-```
-
-The inspection must confirm, at the exact paths expected by the implementation:
+Adjust the filename if `mod_version` changes. Required entries include:
 
 ```text
 META-INF/neoforge.mods.toml
-com/hoghunter/HogHunter.class
+com/hoghunter/HogHunterMod.class
+com/hoghunter/content/HogEntities.class
 com/hoghunter/entity/HogEntity.class
-com/hoghunter/entity/HogEntities.class
-assets/hoghunter/models/entity/boar_hog.json
-assets/hoghunter/models/entity/brute_hog.json
-assets/hoghunter/models/entity/alpha_hog.json
-assets/hoghunter/textures/entity/boar_hog.png
-assets/hoghunter/textures/entity/brute_hog.png
-assets/hoghunter/textures/entity/alpha_hog.png
+com/hoghunter/client/model/HogModel.class
 assets/hoghunter/lang/en_us.json
 assets/hoghunter/sounds.json
-data/hoghunter/structure/hog_combat_test.nbt
+assets/hoghunter/textures/entity/hog/boar_hog.png
+data/hoghunter/recipe/bolt_gun.json
+data/hoghunter/loot_table/entities/rootmother.json
+data/hoghunter/structure/empty.nbt
 ```
 
-The entity model paths above are a contract for this plan. If the renderer uses code-defined models or a different resource convention, update the contract before implementation and inspect the actual required paths. A JAR entry proves presence only; it does not prove the JSON parses or the model bakes.
+Inspect every final entity's skin, every registered inventory/block model, and the generated
+metadata values. Verify the Minecraft/NeoForge dependency ranges and the actual mod version.
+The runtime JAR should not contain Python generators, source WAVs, runtime worlds, caches, or
+verification logs. A JAR listing proves presence, not successful resource decoding.
 
-Inspect `META-INF/neoforge.mods.toml` by extracting it to a temporary verification directory and checking that `modId="hoghunter"`, the declared version is the project version, the loader/version range matches NeoForge 21.1.253's 1.21.1 line, and the dependency block declares the required `minecraft` version range. The file must not contain a placeholder mod id or an old example mod name.
+Scan server, client, GameTest, and build output for registry failures, invalid recipes/loot,
+worldgen codec errors, missing textures/models, unknown sound events, mixin/network exceptions,
+and client-only classloading. Review expected warnings explicitly; a ready server with a recipe
+load failure is not a clean result.
 
-Search logs for both positive and negative signals:
+## 6. Client acceptance
 
-```powershell
-rg -n -i 'hoghunter|Done \(|GameTest|FAILED|Exception|Missing model|Unable to load texture|unknown sound|missing registry|Failed to load' '.\verification' '.\run' '.\build\logs'
+```bash
+./gradlew runClient --no-daemon --console=plain
 ```
 
-The pass record must list every expected warning that was reviewed. A successful server start with a `Missing registry key` or `Failed to load model` line is a failure even if the process remains alive.
+The client requires a usable LWJGL/OpenGL graphics context. A dedicated server cannot prove that
+models bake, HUD state arrives, texture frames sample correctly, or sounds play. When no usable
+graphics context or interaction surface is available, record the actual limitation and mark these
+checks unverified.
 
-## 6. Final acceptance checklist
+Follow [`docs/RELEASE_CHECKS.md`](../docs/RELEASE_CHECKS.md). Capture a client log and screenshots
+covering the seven entities, movement/ability tells, block and item models, survival HUD, darkness,
+config intensity, and disconnect/rejoin state. Audio playback needs an actual listening check;
+an OGG file header or absence of a log error is insufficient.
 
-The mod is accepted only when every applicable item below has a recorded artifact and a zero/positive result as specified:
+## Acceptance language
 
-- [ ] `java -version` is Java 21, 64-bit; the build resolves NeoForge 21.1.253 and targets Minecraft 1.21.1.
-- [ ] `compileJava` exits 0 with no unresolved API or client-on-server errors.
-- [ ] `build` exits 0 and produces the intended `hoghunter-<version>.jar`.
-- [ ] `runData` exits 0; generated output is reviewed and no required hand-authored resource is silently missing.
-- [ ] `@GameTestHolder("hoghunter")` is present on the test class, the `.nbt` template is at `data/hoghunter/structure/hog_combat_test.nbt`, and `runGameTestServer` exits 0.
-- [ ] GameTests prove registry spawn for every final hog entity, AI activation/targeting, outgoing combat damage, incoming damage, and the real block interaction path.
-- [ ] The dedicated `runServer --args='--nogui'` smoke script waits for `Done (` rather than sleeping blindly, teleports a real test player, summons every final hog id, verifies entity UUID/type output, verifies a health decrease from hog combat, and exits 0 after a clean `stop`.
-- [ ] The dedicated smoke artifacts include timestamped server output, sent commands, parsed assertions, and both process/Gradle exit codes.
-- [ ] The JAR contains the verified `neoforge.mods.toml`, classes, entity models/textures, sounds, language data, and GameTest structure at their exact final paths.
-- [ ] Server and GameTest logs contain no missing registry, missing model, missing texture, unknown sound, or uncaught exception errors.
-- [ ] Client rendering/audio proof is completed on a real usable LWJGL/OpenGL context, or the acceptance record explicitly marks it unproven with the Windows headless limitation stated above and schedules a human desktop launch.
-- [ ] A human opens the client and confirms the final horror presentation, because no server-side test can prove the player's visual or audio experience.
+The workflow at `.github/workflows/verify.yml` configures JDK 21 and the stock wrapper, then runs
+resource checks, compilation, build, datagen, GameTests, the dedicated helper, and exact-JAR
+verification. It retains evidence artifacts even when a step fails. A workflow file's existence
+does not prove a remote run passed; record its actual run URL/result when available.
 
-The strongest honest completion statement is therefore one of: **server-complete and client-complete**, when every box passes; or **server-complete, client-unverified**, when all automated gates pass but the client could not obtain a usable graphics context. Never label the latter as a fully working release.
+Use the narrowest accurate description: **source repaired**, **static checks passed**,
+**compiled**, **server tested**, or **client verified**, with the relevant evidence. Do not label a
+source-only archive as a tested binary release. A fully verified release requires the final source
+to build, its server checks to pass, and a real client acceptance pass.
 
-## Sources
+## Primary references
 
-- [NeoForged 1.21.1 Game Tests](https://docs.neoforged.net/docs/1.21.1/misc/gametest/)
-- [NeoForged 1.21.1 Getting Started: building and dedicated-server testing](https://docs.neoforged.net/docs/1.21.1/gettingstarted/)
-- [NeoGradle/ModDevGradle run configuration reference](https://docs.neoforged.net/toolchain/docs/plugins/mdg/)
+- [NeoForge 1.21.1 GameTests](https://docs.neoforged.net/docs/1.21.1/misc/gametest/)
+- [NeoForge 1.21.1 build and server testing](https://docs.neoforged.net/docs/1.21.1/gettingstarted/)
+- [ModDevGradle run configuration](https://docs.neoforged.net/toolchain/docs/plugins/mdg/)

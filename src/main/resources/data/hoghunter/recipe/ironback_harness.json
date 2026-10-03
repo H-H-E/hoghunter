@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " I ",
+    "ICI",
+    " I "
+  ],
+  "key": {
+    "I": {
+      "item": "hoghunter:iron_plate"
+    },
+    "C": {
+      "item": "hoghunter:hoghide_chestplate"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "hoghunter:ironback_harness"
+  }
+}

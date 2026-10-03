@@ -1,9 +1,0 @@
-{
-  "type": "minecraft:crafting_shaped",
-  "pattern": ["WW ", "WS ", "   "],
-  "key": {
-    "W": {"item": "minecraft:white_wool"},
-    "S": {"item": "minecraft:string"}
-  },
-  "result": {"item": "hoghunter:bandage", "count": 1}
-}

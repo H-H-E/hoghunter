@@ -32,11 +32,12 @@ public class HogHunterMod {
         HogSounds.register(modBus);
         HogCreativeTabs.register(modBus);
         HogAttachments.register(modBus);
+        com.hoghunter.worldgen.HogWorldgen.register(modBus);
 
         com.hoghunter.core.HogHunterConfig.register(container);
 
         modBus.addListener(com.hoghunter.entity.HogEntityAttributes::register);
-        modBus.addListener(com.hoghunter.entity.HogSpawnPlacements::register);
+        modBus.addListener(com.hoghunter.net.HogNetworking::register);
 
         LOGGER.info("Hog Hunter loaded: items, blocks, entities, sounds, attachments.");
     }

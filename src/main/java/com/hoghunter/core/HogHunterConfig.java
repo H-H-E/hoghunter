@@ -16,8 +16,6 @@ public final class HogHunterConfig {
     public static final ModConfigSpec.DoubleValue SPAWN_DENSITY_MULTIPLIER;
     public static final ModConfigSpec.DoubleValue OIL_DRAIN_MULTIPLIER;
     public static final ModConfigSpec.DoubleValue HEARTBEAT_STRESS_MULTIPLIER;
-    public static final ModConfigSpec.IntValue STALK_COOLDOWN_SECONDS;
-    public static final ModConfigSpec.BooleanValue STALK_ENABLED;
     public static final ModConfigSpec.BooleanValue SANITY_EFFECTS_ENABLED;
     public static final ModConfigSpec.DoubleValue HORROR_VISUAL_INTENSITY;
     public static final ModConfigSpec.DoubleValue HORROR_AUDIO_INTENSITY;
@@ -30,8 +28,6 @@ public final class HogHunterConfig {
         SPAWN_DENSITY_MULTIPLIER = b.defineInRange("spawnDensityMultiplier", 1.0, 0.25, 2.0);
         OIL_DRAIN_MULTIPLIER = b.defineInRange("oilDrainMultiplier", 1.0, 0.25, 3.0);
         HEARTBEAT_STRESS_MULTIPLIER = b.defineInRange("heartbeatStressMultiplier", 1.0, 0.0, 2.0);
-        STALK_COOLDOWN_SECONDS = b.defineInRange("stalkCooldownSeconds", 90, 30, 300);
-        STALK_ENABLED = b.define("stalkEnabled", true);
         SANITY_EFFECTS_ENABLED = b.define("sanityEffectsEnabled", true);
         HORROR_VISUAL_INTENSITY = b.defineInRange("horrorVisualIntensity", 1.0, 0.0, 1.0);
         HORROR_AUDIO_INTENSITY = b.defineInRange("horrorAudioIntensity", 1.0, 0.0, 1.0);

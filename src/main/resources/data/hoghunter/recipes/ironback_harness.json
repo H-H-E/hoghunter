@@ -1,9 +1,0 @@
-{
-  "type": "minecraft:crafting_shaped",
-  "pattern": ["III", "ICI", "   "],
-  "key": {
-    "I": {"item": "minecraft:iron_ingot"},
-    "C": {"item": "hoghunter:hunter_coat_chestplate"}
-  },
-  "result": {"item": "hoghunter:ironback_harness", "count": 1}
-}

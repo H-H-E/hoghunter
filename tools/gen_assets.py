@@ -1,7 +1,8 @@
 """Deterministic, license-free Hog Hunter asset generator.
 
-Usage: python tools/gen_assets.py --out src/main/resources --seed 20261003
-The generator intentionally writes only the declared PNG/OGG outputs.
+Usage: python tools/gen_assets.py --out src/main/resources --seed 20261003 --check
+The manifest declares every generated PNG, animation metadata file and OGG.
+Check mode regenerates into a temporary directory and never changes the output tree.
 """
 from __future__ import annotations
 
@@ -16,7 +17,7 @@ import tempfile
 import wave
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw
 
 ENTITY = {
     "boar_hog": ((116, 57, 49, 255), (196, 131, 83, 255), "low"),
@@ -151,9 +152,12 @@ def generate_particle_sheet(asset_id, size, palette, seed):
     d.ellipse((2, 2, w - 3, h - 3), fill=(*palette, 205)); d.point((w // 2, h // 2), fill=(255, 240, 180, 255))
     return im
 
-def _sound(path: Path, kind: str, seed: int):
+def _sound(path: Path, kind: str, seed: int, asset_id: str):
     rate, seconds = 44100, {"squeal": .7, "attack": .35, "ambient": 1.1, "activate": .6}.get(kind, .5)
-    n = int(rate * seconds); r = rng_for(seed, str(path)); samples = bytearray()
+    # Preserve the original seed namespace, independent of cwd or --out.
+    n = int(rate * seconds)
+    r = rng_for(seed, f"src/main/resources/assets/hoghunter/sounds/{asset_id}.ogg")
+    samples = bytearray()
     for i in range(n):
         t = i / rate; env = min(1, t * 18) * min(1, (seconds - t) * 9)
         freq = (145 + 110 * math.sin(t * 7)) if kind == "squeal" else (75 + 25 * math.sin(t * 3))
@@ -163,44 +167,162 @@ def _sound(path: Path, kind: str, seed: int):
         wav = Path(td) / "source.wav"
         with wave.open(str(wav), "wb") as f:
             f.setnchannels(1); f.setsampwidth(2); f.setframerate(rate); f.writeframes(samples)
-        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(wav), "-c:a", "libvorbis", "-q:a", "4", str(path)], check=True)
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(wav),
+                        "-fflags", "+bitexact", "-flags:a", "+bitexact", "-map_metadata", "-1",
+                        "-c:a", "libvorbis", "-q:a", "4", str(path)], check=True)
+
+def declared_specs():
+    """The complete owned output set; models/lang are maintained separately."""
+    specs = []
+    def png(path, generator, asset_id, size, palette, output_size=None):
+        specs.append({"path": "assets/hoghunter/" + path, "generator": generator,
+                      "asset_id": asset_id, "size": list(size), "palette": palette,
+                      "output_size": list(output_size or size)})
+    def animation(path, frametime, frames, interpolate):
+        specs.append({"path": "assets/hoghunter/" + path, "generator": "animation",
+                      "data": {"animation": {"frametime": frametime,
+                              "interpolate": interpolate, "frames": list(range(frames))}}})
+    for name, source in [(name, name) for name in ENTITY] + [("tusked_hog", "boar_hog"), ("mine_hog", "ironback_hog")]:
+        path = f"textures/entity/hog/{name}.png"
+        png(path, "generate_entity_skin", name, (64, 64), ENTITY[source], (64, 512))
+        animation(path + ".mcmeta", 2, 8, True)
+    png("textures/entity/hog/hog_blood_overlay.png", "generate_blood_overlay", "hog_blood_overlay", (64, 64), [])
+    for name, color in BLOCKS.items():
+        png(f"textures/block/{name}.png", "generate_block_texture", name, (16, 16), color,
+            (16, 64) if name == "hog_flesh_block" else (16, 16))
+        if name == "hog_flesh_block": animation(f"textures/block/{name}.png.mcmeta", 4, 4, False)
+    for name, color in ITEMS.items():
+        png(f"textures/item/{name}.png", "generate_item_icon", name, (16, 16), color)
+    for name, size, color in [("hog_hunter_vignette", (256, 256), (40, 5, 12)),
+                              ("hog_hunter_blood_edges", (256, 256), (130, 12, 18)),
+                              ("ritual_altar_panel", (176, 166), (164, 101, 56)),
+                              ("fear_meter", (16, 64), (172, 37, 45))]:
+        png(f"textures/gui/{name}.png", "generate_gui_overlay", name, size, color)
+    for name, color in [("hoghide_layer_1", (115, 67, 53)), ("hoghide_layer_2", (91, 50, 42))]:
+        png(f"textures/models/armor/{name}.png", "generate_armor_layer", name, (64, 32), color)
+    for name, color in [("blood_mist", (145, 25, 38)), ("spore_cloud", (94, 177, 117)), ("hog_spark", (227, 161, 63))]:
+        png(f"textures/particle/{name}.png", "generate_particle_sheet", name, (16, 16), color)
+    for name, kind in [("entity/boar_hog/ambient_01", "ambient"), ("entity/boar_hog/attack", "attack"),
+                       ("entity/boar_hog/squeal", "squeal"), ("block/ritual_altar/activate", "activate")]:
+        specs.append({"path": f"assets/hoghunter/sounds/{name}.ogg", "generator": "sound",
+                      "asset_id": name, "kind": kind, "sample_rate": 44100, "channels": 1})
+    return specs
+
+
+def generate_blood_overlay(asset_id, size, palette, seed):
+    im = Image.new("RGBA", size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(im)
+    draw.line((7, 6, 18, 23, 12, 39), fill=(176, 20, 29, 210), width=2)
+    draw.line((44, 8, 37, 26, 48, 47), fill=(115, 10, 22, 190), width=2)
+    return im
+
+
+def strict_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result: raise ValueError(f"Duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def read_manifest(path):
+    manifest = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=strict_object)
+    if manifest.get("version") != 1: raise ValueError("Unsupported asset manifest version")
+    specs = manifest.get("outputs", [])
+    seen = set()
+    expected = {spec["path"] for spec in declared_specs()}
+    generators = {spec["path"]: spec["generator"] for spec in declared_specs()}
+    for spec in specs:
+        rel = spec["path"]
+        if rel in seen: raise ValueError(f"Duplicate output: {rel}")
+        if rel not in expected or Path(rel).is_absolute() or ".." in Path(rel).parts:
+            raise ValueError(f"Unexpected output: {rel}")
+        if spec.get("generator") != generators[rel]: raise ValueError(f"Wrong generator for {rel}")
+        if len(spec.get("sha256", "")) != 64: raise ValueError(f"Missing checksum for {rel}")
+        seen.add(rel)
+    if seen != expected: raise ValueError(f"Manifest omits: {sorted(expected - seen)}")
+    return manifest
+
+
+def render_assets(root, specs, seed):
+    if shutil.which("ffmpeg") is None: raise RuntimeError("ffmpeg with libvorbis is required")
+    generators = {name: globals()[name] for name in (
+        "generate_entity_skin", "generate_block_texture", "generate_item_icon",
+        "generate_gui_overlay", "generate_armor_layer", "generate_particle_sheet", "generate_blood_overlay")}
+    for spec in specs:
+        path = root / spec["path"]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        kind = spec["generator"]
+        if kind == "animation":
+            path.write_text(json.dumps(spec["data"], indent=2) + "\n", encoding="utf-8")
+        elif kind == "sound":
+            _sound(path, spec["kind"], seed, spec["asset_id"])
+        else:
+            palette = tuple(tuple(value) if isinstance(value, list) else value for value in spec["palette"])
+            image = generators[kind](spec["asset_id"], tuple(spec["size"]), palette, seed)
+            if image.mode != "RGBA" or image.size != tuple(spec["output_size"]):
+                raise ValueError(f"Wrong generated PNG dimensions/mode: {spec['path']}")
+            image.save(path)
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def check_assets(root, specs, seed):
+    problems = []
+    owned = {spec["path"] for spec in specs}
+    existing = {path.relative_to(root).as_posix() for path in (root / "assets/hoghunter").rglob("*")
+                if path.is_file() and path.suffix in (".png", ".ogg", ".mcmeta")}
+    for path in sorted(existing - owned): problems.append(f"Undeclared procedural output: {path}")
+    with tempfile.TemporaryDirectory(prefix="hoghunter-asset-check-") as directory:
+        regenerated = Path(directory)
+        render_assets(regenerated, specs, seed)
+        for spec in specs:
+            original = root / spec["path"]
+            fresh = regenerated / spec["path"]
+            if not original.is_file():
+                problems.append(f"Missing: {spec['path']}")
+                continue
+            if digest(original) != spec["sha256"]:
+                problems.append(f"Checksum differs: {spec['path']}")
+            if original.suffix == ".png":
+                with Image.open(original) as image, Image.open(fresh) as reference:
+                    if image.mode != "RGBA" or image.size != tuple(spec["output_size"]):
+                        problems.append(f"Wrong PNG dimensions/mode: {spec['path']}")
+                    elif image.tobytes() != reference.tobytes():
+                        problems.append(f"Pixels differ from generator: {spec['path']}")
+            elif original.suffix == ".mcmeta":
+                if json.loads(original.read_text(), object_pairs_hook=strict_object) != spec["data"]:
+                    problems.append(f"Animation metadata differs: {spec['path']}")
+            elif original.suffix == ".ogg":
+                blob = original.read_bytes()
+                if not blob.startswith(b"OggS") or b"\x01vorbis" not in blob[:256]:
+                    problems.append(f"Not Vorbis OGG: {spec['path']}")
+                if digest(original) != digest(fresh):
+                    problems.append(f"Audio differs (use the recorded FFmpeg version): {spec['path']}")
+    if problems: raise ValueError("\n".join(problems))
+    print(f"PASS: {len(specs)} declared assets reproduce; output tree was not modified")
+
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--out", default="src/main/resources"); ap.add_argument("--seed", type=int, default=20261003)
-    ap.add_argument("--manifest"); ap.add_argument("--check", action="store_true"); args = ap.parse_args()
-    root = Path(args.out); pngs = []
-    for name, colors in ENTITY.items():
-        p = root / "assets/hoghunter/textures/entity/hog" / f"{name}.png"; p.parent.mkdir(parents=True, exist_ok=True)
-        generate_entity_skin(name, (64, 64), colors, args.seed).save(p); pngs.append(p)
-        p.with_name(p.name + ".mcmeta").write_text(json.dumps({"animation":{"frametime":2,"interpolate":True,"frames":list(range(8))}}, indent=2) + "\n", encoding="utf-8")
-    # Keep the two names from the original three-skin asset contract as
-    # deterministic compatibility skins while the gameplay roster uses seven.
-    for name, source in (("tusked_hog", "boar_hog"), ("mine_hog", "ironback_hog")):
-        p = root / "assets/hoghunter/textures/entity/hog" / f"{name}.png"
-        generate_entity_skin(name, (64, 64), ENTITY[source], args.seed).save(p)
-        p.with_name(p.name + ".mcmeta").write_text(json.dumps({"animation":{"frametime":2,"interpolate":True,"frames":list(range(8))}}, indent=2) + "\n", encoding="utf-8")
-    overlay = Image.new("RGBA", (64, 64), (0, 0, 0, 0)); od = ImageDraw.Draw(overlay)
-    od.line((7, 6, 18, 23, 12, 39), fill=(176, 20, 29, 210), width=2); od.line((44, 8, 37, 26, 48, 47), fill=(115, 10, 22, 190), width=2)
-    op = root / "assets/hoghunter/textures/entity/hog/hog_blood_overlay.png"; op.parent.mkdir(parents=True, exist_ok=True); overlay.save(op)
-    for name, color in BLOCKS.items():
-        p = root / "assets/hoghunter/textures/block" / f"{name}.png"; p.parent.mkdir(parents=True, exist_ok=True); generate_block_texture(name, (16,16), color, args.seed).save(p); pngs.append(p)
-        if name == "hog_flesh_block":
-            p.with_name(p.name + ".mcmeta").write_text(json.dumps({"animation":{"frametime":4,"interpolate":False,"frames":[0,1,2,3]}}, indent=2) + "\n", encoding="utf-8")
-    for name, color in ITEMS.items():
-        p = root / "assets/hoghunter/textures/item" / f"{name}.png"; p.parent.mkdir(parents=True, exist_ok=True); generate_item_icon(name, (16,16), color, args.seed).save(p); pngs.append(p)
-    for name, size, color in [("hog_hunter_vignette",(256,256),(40,5,12)),("hog_hunter_blood_edges",(256,256),(130,12,18)),("ritual_altar_panel",(176,166),(164,101,56)),("fear_meter",(16,64),(172,37,45))]:
-        p = root / "assets/hoghunter/textures/gui" / f"{name}.png"; p.parent.mkdir(parents=True, exist_ok=True); generate_gui_overlay(name, size, color, args.seed).save(p); pngs.append(p)
-    for name, color in [("hoghide_layer_1",(115,67,53)),("hoghide_layer_2",(91,50,42))]:
-        p = root / "assets/hoghunter/textures/models/armor" / f"{name}.png"; p.parent.mkdir(parents=True, exist_ok=True); generate_armor_layer(name,(64,32),color,args.seed).save(p); pngs.append(p)
-    for name, color in [("blood_mist",(145,25,38)),("spore_cloud",(94,177,117)),("hog_spark",(227,161,63))]:
-        p = root / "assets/hoghunter/textures/particle" / f"{name}.png"; p.parent.mkdir(parents=True, exist_ok=True); generate_particle_sheet(name,(16,16),color,args.seed).save(p); pngs.append(p)
-    sounds = [("entity/boar_hog/ambient_01","ambient"),("entity/boar_hog/attack","attack"),("entity/boar_hog/squeal","squeal"),("block/ritual_altar/activate","activate")]
-    for rel, kind in sounds:
-        p = root / "assets/hoghunter/sounds" / f"{rel}.ogg"; p.parent.mkdir(parents=True, exist_ok=True); _sound(p, kind, args.seed)
-    if args.check:
-        bad = [p for p in pngs if Image.open(p).mode != "RGBA"]
-        if bad: raise SystemExit(f"invalid PNG mode: {bad}")
-        print(f"checked {len(pngs)} deterministic PNGs and {len(sounds)} OGGs")
-    else: print(f"generated {len(pngs)} PNGs and {len(sounds)} OGGs")
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--out", default="src/main/resources", help="Only this resource tree is written")
+    ap.add_argument("--seed", type=int, default=20261003)
+    ap.add_argument("--manifest", type=Path, default=Path(__file__).parent / "assets/manifest.json")
+    ap.add_argument("--check", action="store_true", help="Compare temporary regeneration without changing any committed files")
+    args = ap.parse_args()
+    try:
+        manifest = read_manifest(args.manifest)
+        specs = manifest["outputs"]
+        root = Path(args.out)
+        if args.check:
+            check_assets(root, specs, args.seed)
+        else:
+            render_assets(root, specs, args.seed)
+            print(f"Generated {len(specs)} declared assets; run --check to validate release checksums")
+    except (ValueError, RuntimeError, OSError, subprocess.CalledProcessError) as error:
+        raise SystemExit(str(error)) from error
+
 
 if __name__ == "__main__": main()

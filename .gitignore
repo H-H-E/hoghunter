@@ -21,6 +21,12 @@ run-gametest/
 .settings/
 eclipse/
 
+# Reproducible verification creates these locally, never as mod resources.
+verification/
+__pycache__/
+*.pyc
+src/generated/resources/.cache/
+
 # Local logs and scratch output from verification runs
 *.log
 gametest-run.log

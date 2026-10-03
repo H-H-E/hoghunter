@@ -15,6 +15,8 @@ java {
     withSourcesJar()
 }
 
+sourceSets.main.resources.srcDir 'src/generated/resources'
+
 repositories {
     mavenCentral()
 }
@@ -30,17 +32,15 @@ neoForge {
         server {
             server()
             programArgument '--nogui'
-            gameDirectory = file('run/server')
+            gameDirectory = file(providers.gradleProperty('hoghunterServerDirectory').orElse('run/server').get())
         }
         // Automated runtime proof. Runs the @GameTest methods in com.hoghunter.test on a
         // dedicated server and exits non-zero if any assertion fails. This is the gate that
         // catches registry/attribute/AI regressions that compileJava cannot see.
         gameTestServer {
             type = 'gameTestServer'
-            // Tests are filtered by @GameTest#templateNamespace. They use the vanilla "empty"
-            // structure template, so vanilla must be enabled too or every test is dropped
-            // and the server aborts with "No test functions were given!".
-            systemProperty 'neoforge.enabledGameTestNamespaces', "${mod_id},minecraft"
+            // Every test uses the mod's checked-in hoghunter:empty structure.
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
             gameDirectory = file('run/gametest')
         }
         data {
@@ -65,6 +65,26 @@ neoForge {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.named('runGameTestServer').configure {
+    doFirst {
+        // A fresh GameTest launch otherwise logs a misleading missing-properties error.
+        def propertiesFile = file('run/gametest/server.properties')
+        if (!propertiesFile.exists()) {
+            propertiesFile.parentFile.mkdirs()
+            propertiesFile.text = 'online-mode=false\nserver-port=0\n'
+        }
+    }
+}
+
+tasks.named('runServer').configure {
+    standardInput = System.in
 }
 
 processResources {

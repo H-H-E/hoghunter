@@ -1,238 +1,149 @@
-# Hog Hunter — engineering handoff
+# Hog Hunter engineering handoff
 
-**Date:** 2026-10-03
-**Target:** Minecraft Java 1.21.1 / NeoForge 21.1.253 / Java 21
-**Repo state:** first commit, self-contained, nothing carried over from the parent checkout.
+**Completion pass:** 2026-10-03 (started in the user's local timezone).
 
-This document is written for an engineer or agent picking the mod up cold. It states what is
-actually working, how it was proven, and what is still open. Trust the "Verified" section — every
-claim there came from a real command output, not from reading the code.
+**Target:** Minecraft Java 1.21.1 / NeoForge 21.1.253 / JDK 21 / Gradle 8.12.
 
----
+**Baseline inspected:** Git commit `3b538c53d138d5e27d199485213a761b9d9090c0`.
 
-## 1. TL;DR
+## Status
 
-The mod is feature-complete against its own design document and **compiles, packages, generates
-data, and passes 5/5 automated GameTests on a real NeoForge server**. It has custom models,
-textures, and sounds for all seven entities.
+The completion pass repairs the mod's survival acquisition, progression, item interactions,
+entity abilities and persistence, state synchronization, client presentation, resources, and
+verification. It does not turn the larger original mine-campaign plan into a shipped campaign.
+The actual playable scope is ordinary caves plus a craftable extraction/ritual altar.
 
-The one significant gap is **client-side verification**: nothing has yet confirmed the renderer and
-HUD actually draw in a real Minecraft client window. Everything below that line is unproven.
+**Final integration evidence is being collected.** The table below is the release record and must
+be finalized against the last source revision before an artifact is described as release-ready.
+Historical build/server/five-test claims from the earlier handoff are not substituted for new
+verification of changed code.
 
----
+## 1. Verification record
 
-## 2. Verified — with the exact evidence
-
-Run from the repo root with JDK 21 on the `PATH`.
-
-### 2.1 Compile and package
-
-```powershell
-.\gradlew.bat build --no-daemon --console=plain
-```
-
-```text
-> Task :jar
-> Task :assemble
-> Task :build
-BUILD SUCCESSFUL
-```
-
-Produces `build/libs/hoghunter-0.1.0.jar`. The only warnings are two NeoForge deprecation notices
-about `EventBusSubscriber(bus = ...)` in `client/HogClient.java` — cosmetic, not errors.
-
-### 2.2 Data generation
-
-```powershell
-.\gradlew.bat runData --no-daemon --console=plain
-```
-
-```text
-[minecraft/DataGenerator]: All providers took: 0 ms
-BUILD SUCCESSFUL
-```
-
-### 2.3 Automated runtime proof — 5/5 GameTests pass
-
-```powershell
-.\gradlew.bat runGameTestServer --no-daemon --console=plain
-```
-
-```text
-[minecraft/GameTestServer]: 5 tests are now running at position -12030903, -59, 7737995!
-[minecraft/GameTestServer]: All 5 required tests passed :)
-BUILD SUCCESSFUL in 34s
-```
-
-The five tests, defined in `src/main/java/com/hoghunter/test/HogHunterGameTests.java`:
-
-| Test | Asserts |
-|---|---|
-| `hogRegistryAndAttributes` | All 7 entity types resolve, have attribute suppliers, and report the expected max health |
-| `hogAiTicks` | A spawned `boar_hog` survives 20 ticks of live AI ticking |
-| `hogWeaponDamageHurtsBoar` | `HogWeaponDamage.apply` reduces entity health |
-| `hogBlocksPlaceAndRemove` | All 4 blocks place and break correctly |
-| `hogBlockEntitiesInstantiate` | `hog_nest` creates the correct block entity type |
-
-This gate is the one that matters. It runs a real dedicated server, loads the mod, and exercises
-registries, attributes, AI, combat, and blocks.
-
-### 2.4 Dedicated server smoke test
-
-`runServer` has been run and reaches a clean world load:
-
-```text
-Done (17.095s)!
-[co.ho.HogHunterMod/]: Hog Hunter server hook OK.
-```
-
-with no registry, attribute, recipe, loot-table, or worldgen errors. Earlier builds did log seven
-`Entity hoghunter:... has no attributes` errors and invalid-loot-table crashes; both classes of
-fault are fixed (see section 5).
-
----
-
-## 3. Not yet verified — the open work
-
-### 3.1 Client rendering and audio (highest priority)
-
-`runClient` has **never been run to completion**. Consequently the following are unproven:
-
-- `client/HogRenderer.java` and `client/model/HogModel.java` actually draw the hogs.
-- `client/HogClientState.java` and the HUD overlay render.
-- The 38 PNG textures bind correctly and are not missing or mis-mapped.
-- The 4 OGG sounds are registered under the right keys and play.
-- `HogClient`'s client setup is genuinely invoked at startup.
-
-`HogClient.java` uses `@EventBusSubscriber(modid = "hoghunter", value = Dist.CLIENT, bus = Bus.MOD)`,
-which currently draws two "marked for removal" deprecation warnings. While wiring the mod, confirm
-the client setup actually fires — a client class that never registers its renderers fails silently
-and looks identical to a working mod until you go looking for a hog in-game.
-
-**How to close it:** run `runClient`, create a world, summon each entity with
-`/summon hoghunter:boar_hog ~ ~ ~`, and screenshot each one. Verify the HUD appears when the
-heart-rate or noise systems are active.
-
-### 3.2 Gameplay tuning
-
-Ability cooldowns, damage values, and spawn weights are implemented and plausible but have not been
-playtested for balance. Treat the numbers in the entity classes as first-draft.
-
-### 3.3 Known design substitutions
-
-Two recipes deviate from the original design because the design was not runtime-valid:
-
-- **Chestplate** — the design called for 10 ingredients, which cannot fit a 3x3 crafting grid. Now
-  8 leather + 1 iron.
-- **`salt` and `purified_tusk` tags** — no `salt` or `purified_tusk` item is registered, so these tags
-  currently point at `minecraft:sugar` and `minecraft:bone`. Either register the real items or retarget
-  the tags. **This is a loose end worth closing.**
-
----
-
-## 4. Architecture notes for a new maintainer
-
-### 4.1 Entry points
-
-- `HogHunterMod.java` — mod entrypoint; wires registries, attachments, spawn placements, and the
-  server hook that logs `Hog Hunter server hook OK.`
-- `HogHunterBusEvents.java` — common/server event subscribers.
-- `HogClient.java` — the client-side event subscriber.
-
-### 4.2 Registration pattern
-
-Everything is registered through `DeferredRegister` holders in `content/`:
-`HogBlocks`, `HogItems`, `HogEntities`, `HogBlockEntities`, `HogSounds`, `HogCreativeTabs`.
-
-Two registration details are easy to break and were both live bugs during development:
-
-1. **Entity attributes must be explicitly registered.** `entity/HogEntityAttributes.java` is what
-   makes `boar_hog` and friends loadable. Deleting it produces `Entity hoghunter:X has no attributes`
-   at server start.
-2. **Every block needs a `BlockItem`.** The four in `content/HogItems.java`
-   (`CORRUPTED_ORE_BLOCK`, `DEPTH_GATE_BLOCK`, `HOG_NEST_BLOCK`, `SALT_LINE_BLOCK`) are what make the
-   blocks placeable *and* what the loot tables resolve against. Note the constructor argument order
-   is `BlockItem(Block, Properties)` — the reverse does not compile, which is exactly the mistake
-   that was made once already.
-
-### 4.3 Data layout
-
-Recipes, tags, loot tables, worldgen, and the GameTest structure all live under
-`src/main/resources/data/hoghunter/`.
-
-**Loot tables:** `survives_explosion` is an *entry condition* in 1.21.1, not a pool function:
-
-```json
-{ "type": "minecraft:item", "name": "hoghunter:hog_nest",
-  "conditions": [ { "condition": "minecraft:survives_explosion" } ] }
-```
-
-The `functions` form crashes the server. All four block tables are currently correct.
-
-### 4.4 The GameTest structure template
-
-`tools/make_gametest_structure.py` generates
-`src/main/resources/data/hoghunter/structure/empty.nbt`, the template all five tests use.
-
-Two facts that cost real time and will cost it again:
-
-- **Minecraft release jars ship no gametest structure templates.** The `minecraft:empty` template
-  that NeoForge examples reference does not exist in 1.21.1. The mod must supply one. This is why
-  `build.gradle` enables `minecraft` in `neoforge.enabledGameTestNamespaces`, and why the tests are
-  annotated `@PrefixGameTestTemplate(false)` with `templateNamespace = "hoghunter"`.
-- **The template needs a solid floor.** Entities spawn inside the structure bounds; a truly empty
-  template lets them fall out of the world before the assertions run. The generated template is a
-  7x7x7 stone floor with air above.
-
-Regenerate with:
-
-```powershell
-python tools/make_gametest_structure.py
-```
-
-If you resize the template, remember the tests place blocks at relative positions `(0..3, 0, 0)`.
-
----
-
-## 5. Defects found and fixed
-
-Kept as a record, because each one is a trap that is easy to fall back into.
-
-| Defect | Symptom | Fix |
+| Command / gate | Current result | Meaning / limit |
 |---|---|---|
-| Missing `BlockItem` import | `cannot find symbol: BlockItem` | Added the import |
-| `BlockItem` args swapped | `Properties cannot be converted to Block` | `new BlockItem(block, props)` |
-| No entity attribute registration | `Entity hoghunter:X has no attributes` (x7) | `entity/HogEntityAttributes.java` |
-| Invalid loot-table functions | Server crash on load | `survives_explosion` moved into `conditions` |
-| `template = "empty"` unprefixed | Server requested `minecraft:hoghuntergametests.empty` | `@PrefixGameTestTemplate(false)` |
-| No vanilla gametest template | `IllegalStateException: Missing test structure: minecraft:empty` | Mod-supplied `structure/empty.nbt` |
-| Empty template has no floor | Spawned entities fall out of the world | Stone floor in the generated NBT |
-| `runData` misconfigured | `Trying to prepare unknown run: clientData` | `data` run needs `type = 'data'`, not `clientData()` |
+| `java -version`; `./gradlew --version` | JDK 21 and Gradle 8.12 available in the execution environment | Build environment required a scratch-only compatibility workaround; details below |
+| `python3 tools/verify_resources.py` | Static resource pass reported during integration | Re-run after final source/resources; does not prove game rendering or codecs |
+| `python3 tools/make_gametest_structure.py --check` | Corrected template generated and independently decoded | Exact checked-in NBT must continue to match generator |
+| `python3 tools/gen_assets.py --manifest tools/assets/manifest.json --out src/main/resources --seed 20261003 --check` | Passed for 52 declared outputs | Compared in a temporary directory; asset-tree hashes unchanged by check |
+| `./gradlew compileJava --no-daemon --console=plain` | Integrated compilation passed; final rerun pending | Against exact target dependencies through the execution environment adapter |
+| `./gradlew build --no-daemon --console=plain` | Integrated build passed; final rerun pending | Final JAR must be rebuilt after all repairs |
+| `./gradlew runData --no-daemon --console=plain` | Integrated datagen bootstrap passed; final rerun pending | Resources are hand-authored; no claim that this alone validates recipes |
+| `./gradlew runGameTestServer --no-daemon --console=plain` | First integrated run: 23/25; Burrower and Lanternback cases under investigation | This is a failed gate until every required test passes |
+| `python3 tools/smoke_server.py --timeout 240` | First run passed fourteen assertions and clean exit 0; final six-block rerun pending | Dedicated development server, not a separate packaged-JAR installation |
+| `python3 tools/verify_resources.py --jar build/libs/hoghunter-0.1.0.jar` | Final result pending | Must inspect the JAR rebuilt from final source |
+| `./gradlew runClient` and real-client scenarios | Unverified until a usable graphics/audio run is recorded | Server tests cannot establish visuals, controls, HUD delivery, or audibility |
+| `.github/workflows/verify.yml` | Workflow configured | Remote execution is not implied by committing a workflow |
 
-The `runData` one is worth flagging: `clientData()` inside the `data` run block creates a *separate*
-run type and silently breaks `prepareDataRun`. It must be `type = 'data'`.
+The build environment used official Eclipse Temurin **21.0.12.1+1-LTS** and the repository's
+Gradle **8.12** wrapper. Normal NeoFormRuntime 1.0.40 bootstrap failed before mod compilation
+because `ProcessHandle.current().info().command()` is empty in this container. Two external
+NeoFormRuntime helper call sites were given a fallback to `java.home/bin/java` and loaded through
+a scratch-only Gradle init script. The original dependency artifact was retained, and no mod
+source, target API, or repository dependency was replaced to accommodate the environment.
 
----
+The successful local Gradle invocations used this form, with the exact absolute invocation in
+each evidence directory's `result.json`:
 
-## 6. Suggested next steps, in priority order
+```text
+bash gradlew -I <external-nfrt-portability.init.gradle> <task> --stacktrace --no-daemon --console=plain --max-workers=4
+```
 
-1. Run `runClient` and verify rendering, HUD, textures, and sound. Close section 3.1.
-2. Fix the `salt` / `purified_tusk` tag targets — either register the items or repoint the tags (3.3).
-3. Playtest and tune ability cooldowns and spawn weights (3.2).
-4. Review `run/` crash-report history for anything not yet reproduced.
-5. Only then consider a release: bump `mod_version`, confirm `neoforge.mods.toml`, and re-run the
-   full verification chain from `design/04-verification.md`.
+The portability patch and before/after hashes are recorded as
+`nfrt-java-home-fallback.patch` and `nfrt-portability-record.json` in the accompanying verification
+evidence. The proxy truststore/launcher were also external environment setup. A stock
+clean-checkout run through the configured CI workflow remains distinct from these adapted runs.
 
----
+Full logs, exact launcher/arguments, process exit codes, and JAR hash should accompany the final
+record. Initial evidence labels are `integrated/compile-1`, `build-1`, `datagen-1`, `gametest-1`,
+and `server-1`; later final runs supersede them. The dedicated helper writes an isolated world plus `verification/server/server.log`,
+`commands.txt`, and `assertions.json`; it never resets an existing development world.
 
-## 7. Reference material
+Reviewed runtime warnings include the offline test environment's failed authentication-key DNS
+lookup at `api.minecraftservices.com` and vanilla command-teleport ambiguity warnings. These did
+not prevent the isolated offline server from passing its command assertions. They are not
+evidence of working authenticated multiplayer, and mod registry/data/network errors must not be
+hidden in that warning allowance.
 
-- [`design/01-architecture.md`](../design/01-architecture.md) — intended architecture.
-- [`design/02-gameplay.md`](../design/02-gameplay.md) — gameplay and ability specs.
-- [`design/03-assets.md`](../design/03-assets.md) — asset requirements.
-- [`design/04-verification.md`](../design/04-verification.md) — the full verification standard. The
-  brief summary in `README.md` is derived from this; this is the authoritative version.
+## 2. Important defects found and repaired
 
-The design docs were written as plans before implementation. Where the implementation and a design
-doc disagree, the design doc describes the original intent and section 3.3 records the deliberate
-deviations.
+| Area | Confirmed baseline problem | Completion work |
+|---|---|---|
+| Survival recipes | Obsolete plural directories hid recipes; result keys and armor ids were also stale | Singular 1.21.1 paths, correct result schema/ids, real material sources and recipe discovery |
+| Natural spawning | Placement predicates existed without biome spawn entries; short proximity conditions conflicted with vanilla spawn distance | Biome modifiers, viable predicates, local bounds, and reachable species materials |
+| Player HUD | State payload was never sent and attachment syncing had no configured client mirror | Explicit authoritative snapshots and client lifecycle reset; actual inventory ammo count |
+| Physiology | Injuries, treatment, noise sources, fuel drain, and several exposed settings were inert or incomplete | Server injury/treatment/fuel/noise/panic behavior; removed unused stalk toggles |
+| Persistence | Hog save overrides skipped superclass state; temporary boss fuel storage could lose or restore stale oil | Vanilla save preservation, cooldown/phase state, fuel-independent blackout timers |
+| Combat | Generic back-facing armor applied to all species; sweep arc was twice the intended width; abilities lacked robust tells/limits | Ironback-only source-relative armor, 120-degree sweep, clear ability phases/cooldowns/caps |
+| Tools | Medical items consumed without treatment; charged gun completion, armor piercing, pulls, and snares were incomplete | Actual timed treatments, single-fire charge paths, inventory/durability accounting, bounded movement, persistent placed snare |
+| Blocks/progression | Gate had no award path and remained solid when open; boss arena helper was unreachable | Extraction tiers, functional collision, a survival ritual, and persisted active-boss reservation |
+| Renderer/assets | Generic renderer missed standard transforms; 64×512 entity strips were sampled as ordinary skins; models/HUD/sounds had gaps | Living-mob renderer, explicit frame/patch sampling, seven variants, HUD/audio, complete referenced resources |
+| Verification | Five broad tests missed major mechanics; NBT writer nested list compounds incorrectly; asset `--check` overwrote outputs | Correct template/independent decode, behavior tests, strict resource/JAR checks, nonmutating asset verification |
+
+The malformed baseline template is an observation about the inspected files. It does not by
+itself establish what a historical test invocation did in another checkout or runtime directory.
+The newly executed gates are the basis for this handoff.
+
+## 3. Survival route and controls
+
+The README contains the shortest walkthrough. The important content connections are:
+
+- Corrupted ore and early hogs supply tissue. A craftable surface root altar banks sequential
+  evidence tiers: three tissue, then tooth plus sac, then an iron plate after treating a fracture.
+- Salt comes from dried kelp smelting; purified tusks use hook tooth, salt, and amethyst. There
+  are no sugar/bone placeholders for these two materials.
+- A deep altar at Y<=-49, tier 3, three marked tusks, and a prepared dry room start Rootmother.
+  Offerings are consumed only after a valid spawn. The world tracks one active ritual boss,
+  including unloaded encounters. A surface heart extraction finishes tier 5 and keeps the trophy.
+- Guns consume actual inventory bolts. Early silver release fires normally; a completed charge
+  costs two bolts and pins an eligible hog. Medical and oil use are timed, validated transactions.
+- A held/offhand toggled lantern consumes oil and supplies personal night vision/reveal. It does
+  not emit world block light. Blackout suspends availability without modifying stored fuel.
+- Vanilla death inventory rules remain in effect. Player tier and fracture-treatment history
+  survive; temporary expedition pressure/injuries/locks reset.
+
+Exact mechanics, default numbers, and the limits compared with the original plan are in
+[`design/02-gameplay.md`](../design/02-gameplay.md).
+
+## 4. What remains outside this version
+
+The implemented route uses ordinary caves and player-built rooms. It does not include a generated
+five-floor mine/camp, authored quest/safe-room/scare templates, a separate stalk director, a
+magazine/reload or blueprint interface, placed/thrown radius-light lanterns, root vents, or camp
+fast travel. These were broader design ambitions, not secretly working systems in the baseline.
+
+The remaining acceptance work is practical: verify final automated gates on the final revision,
+run the real-client scenarios, listen to the audio, and complete a normal survival playthrough to
+assess difficulty/drop/fuel pacing. A client launch without visible errors is still weaker than
+that playthrough. See [`RELEASE_CHECKS.md`](RELEASE_CHECKS.md).
+
+## 5. Maintenance map and invariants
+
+- `HogHunterMod` wires common registration. Attribute and spawn listeners must each be installed
+  once. NeoForge 21.1.253's inferred subscriber bus was not itself the missing-state-sync defect.
+- `HogAttachments`/`HogHunterPlayerData` own persistent state; `HogHunterPlayerEvents` applies server
+  rules and lifecycle resets; `HogNetworking` sends display snapshots. Do not introduce a second
+  authoritative ammo, oil, or progression store on the client.
+- `HogEntity` and species subclasses own target/ability state. Call superclass save methods;
+  honor interruption/cooldown rules; keep Rootmother immune to ordinary rooting/pulls.
+- `RootAltarBlock` performs evidence/ritual transactions. `RootmotherArenaGenerator` finds safe
+  prepared space rather than overwriting builds. `RootmotherRitualData` protects encounter identity
+  across unloads and dimensions.
+- `HogNestBlockEntity`/`BaitedSnareBlockEntity` persist actual cooldown/armed state; test placement,
+  recovery, reload, invalid support, and population bounds.
+- `HogRenderer`, `HogModel`, `SkinPatchConsumer`, `HogDetailsLayer`, `HogHud`, and `HogClientAudio`
+  remain client-only. Existing illustration strips require explicit sampling.
+- Runtime resources use singular `recipe`, `loot_table`, `structure`, `tags/item`, and `tags/block`.
+  Vanilla mining tags live in `data/minecraft/tags/block`, not only the mod namespace.
+
+`tools/verify_resources.py` and the GameTests are complementary. The former catches broken
+references/formats before launch; the latter checks actual server behavior. The asset manifest
+covers the declared procedural PNG/metadata/OGG subset, not all runtime JSON. Its recorded authoring
+toolchain is the reproducibility reference.
+
+## 6. Before publishing a binary
+
+Use [`design/04-verification.md`](../design/04-verification.md), collect final evidence, and update
+section 1. Publish a JAR only when its final build succeeds. A source ZIP is an honest fallback
+when a target environment or remote write is unavailable; label its actual verification state.
+Do not call a configured CI workflow, an old JAR, or an unexecuted test a passing release gate.

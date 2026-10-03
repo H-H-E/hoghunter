@@ -1,8 +1,16 @@
-summon hoghunter:boar_hog 0 -60 0
-summon hoghunter:spore_hog 4 -60 0
-summon hoghunter:hook_hog 8 -60 0
-summon hoghunter:screecher_hog 12 -60 0
-summon hoghunter:ironback_hog 16 -60 0
-summon hoghunter:mire_hog 20 -60 0
-summon hoghunter:rootmother 26 -60 0
-say SUMMON_SENT
+gamemode creative @p
+execute in minecraft:overworld run tp @p 12 82 10
+execute in minecraft:overworld run fill -4 79 -4 34 79 5 minecraft:stone
+execute in minecraft:overworld run fill -4 80 -4 34 85 5 minecraft:air
+execute in minecraft:overworld run summon hoghunter:boar_hog 0 80 0 {NoAI:1b,PersistenceRequired:1b}
+execute in minecraft:overworld run summon hoghunter:spore_hog 4 80 0 {NoAI:1b,PersistenceRequired:1b}
+execute in minecraft:overworld run summon hoghunter:hook_hog 8 80 0 {NoAI:1b,PersistenceRequired:1b}
+execute in minecraft:overworld run summon hoghunter:screecher_hog 12 80 0 {NoAI:1b,PersistenceRequired:1b}
+execute in minecraft:overworld run summon hoghunter:ironback_hog 16 80 0 {NoAI:1b,PersistenceRequired:1b}
+execute in minecraft:overworld run summon hoghunter:mire_hog 20 80 0 {NoAI:1b,PersistenceRequired:1b}
+execute in minecraft:overworld run summon hoghunter:rootmother 26 80 0 {NoAI:1b,PersistenceRequired:1b}
+give @p hoghunter:bolt_gun
+give @p hoghunter:iron_bolt 32
+give @p hoghunter:field_lantern
+give @p hoghunter:root_altar
+say Hog Hunter visual gallery ready. Use separate live enemies for ability tests.

@@ -1,15 +1,4 @@
 {
   "type": "minecraft:block",
-  "pools": [
-    {
-      "rolls": 1.0,
-      "entries": [
-        {
-          "type": "minecraft:item",
-          "name": "hoghunter:salt_line",
-          "conditions": [{"condition": "minecraft:survives_explosion"}]
-        }
-      ]
-    }
-  ]
+  "pools": []
 }

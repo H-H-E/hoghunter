@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "hoghunter:corrupted_ore",
+    "hoghunter:depth_gate",
+    "hoghunter:root_altar"
+  ]
+}

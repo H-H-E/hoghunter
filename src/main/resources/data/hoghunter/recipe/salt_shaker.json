@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " S ",
+    "PGB",
+    "   "
+  ],
+  "key": {
+    "S": {
+      "tag": "hoghunter:salt"
+    },
+    "P": {
+      "item": "minecraft:paper"
+    },
+    "G": {
+      "item": "minecraft:glass_bottle"
+    },
+    "B": {
+      "tag": "hoghunter:salt"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "hoghunter:salt_shaker"
+  }
+}
