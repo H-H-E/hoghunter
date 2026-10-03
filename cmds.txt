@@ -1,0 +1,8 @@
+summon hoghunter:boar_hog 0 -60 0
+summon hoghunter:spore_hog 4 -60 0
+summon hoghunter:hook_hog 8 -60 0
+summon hoghunter:screecher_hog 12 -60 0
+summon hoghunter:ironback_hog 16 -60 0
+summon hoghunter:mire_hog 20 -60 0
+summon hoghunter:rootmother 26 -60 0
+say SUMMON_SENT

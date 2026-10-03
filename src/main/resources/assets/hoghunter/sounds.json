@@ -1,0 +1,6 @@
+{
+  "entity.boar_hog.ambient": {"sounds":[{"name":"hoghunter:entity/boar_hog/ambient_01","volume":0.8}],"subtitle":"subtitles.hoghunter.entity.boar_hog.ambient"},
+  "entity.boar_hog.attack": {"sounds":[{"name":"hoghunter:entity/boar_hog/attack","volume":1.0}],"subtitle":"subtitles.hoghunter.entity.boar_hog.attack"},
+  "entity.boar_hog.squeal": {"sounds":[{"name":"hoghunter:entity/boar_hog/squeal","volume":0.9}],"subtitle":"subtitles.hoghunter.entity.boar_hog.squeal"},
+  "block.ritual_altar.activate": {"sounds":[{"name":"hoghunter:block/ritual_altar/activate","volume":0.7}],"subtitle":"subtitles.hoghunter.block.ritual_altar.activate"}
+}

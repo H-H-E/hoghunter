@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["L L", "LIL", "L L"],
+  "key": {
+    "L": {"item": "minecraft:leather"},
+    "I": {"item": "minecraft:iron_ingot"}
+  },
+  "result": {"item": "hoghunter:hunter_coat_chestplate", "count": 1}
+}

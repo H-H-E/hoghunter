@@ -1,0 +1,86 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.107'
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+
+repositories {
+    mavenCentral()
+}
+
+neoForge {
+    version = neoforge_version
+
+    runs {
+        client {
+            client()
+            gameDirectory = file('run/client')
+        }
+        server {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file('run/server')
+        }
+        // Automated runtime proof. Runs the @GameTest methods in com.hoghunter.test on a
+        // dedicated server and exits non-zero if any assertion fails. This is the gate that
+        // catches registry/attribute/AI regressions that compileJava cannot see.
+        gameTestServer {
+            type = 'gameTestServer'
+            // Tests are filtered by @GameTest#templateNamespace. They use the vanilla "empty"
+            // structure template, so vanilla must be enabled too or every test is dropped
+            // and the server aborts with "No test functions were given!".
+            systemProperty 'neoforge.enabledGameTestNamespaces', "${mod_id},minecraft"
+            gameDirectory = file('run/gametest')
+        }
+        data {
+            type = 'data'
+            gameDirectory = file('run/data')
+            programArgument '--mod'
+            programArgument mod_id
+            programArgument '--all'
+            programArgument '--output'
+            programArgument file('src/generated/resources/').getAbsolutePath()
+            programArgument '--existing'
+            programArgument file('src/main/resources/').getAbsolutePath()
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+processResources {
+    def replaceProperties = [
+            mod_id               : mod_id,
+            mod_name             : mod_name,
+            mod_license          : mod_license,
+            mod_version          : mod_version,
+            mod_authors          : mod_authors,
+            minecraft_version    : minecraft_version,
+            neoforge_version     : neoforge_version
+    ]
+
+    inputs.properties(replaceProperties)
+
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand(replaceProperties)
+    }
+}

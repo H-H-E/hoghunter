@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [" B ", "GM ", "   "],
+  "key": {
+    "B": {"item": "hoghunter:bandage"},
+    "G": {"item": "minecraft:golden_carrot"},
+    "M": {"item": "minecraft:honey_bottle"}
+  },
+  "result": {"item": "hoghunter:field_medkit", "count": 1}
+}

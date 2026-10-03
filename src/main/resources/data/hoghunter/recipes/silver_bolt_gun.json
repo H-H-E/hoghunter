@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["TAT", "IBI", "   "],
+  "key": {
+    "T": {"tag": "hoghunter:purified_tusk"},
+    "A": {"item": "minecraft:amethyst_shard"},
+    "I": {"item": "minecraft:iron_ingot"},
+    "B": {"item": "hoghunter:bolt_gun"}
+  },
+  "result": {"item": "hoghunter:silver_bolt_gun", "count": 1}
+}

@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["F", "S", "I"],
+  "key": {
+    "F": {"item": "minecraft:feather"},
+    "S": {"item": "minecraft:stick"},
+    "I": {"item": "minecraft:iron_nugget"}
+  },
+  "result": {"item": "hoghunter:iron_bolt", "count": 4}
+}

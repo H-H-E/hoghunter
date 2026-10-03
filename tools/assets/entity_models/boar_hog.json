@@ -1,0 +1,1 @@
+{"id":"boar_hog","texture":"hoghunter:textures/entity/hog/boar_hog.png","texture_size":[64,64],"silhouette":"low","bones":["body","neck","head","snout","leg_front_left","leg_front_right","leg_back_left","leg_back_right","tusk_left","tusk_right"]}

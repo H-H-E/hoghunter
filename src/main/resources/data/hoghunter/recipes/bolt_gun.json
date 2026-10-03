@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["ICW", "ISI", " S "],
+  "key": {
+    "I": {"item": "minecraft:iron_ingot"},
+    "C": {"item": "minecraft:copper_ingot"},
+    "S": {"item": "minecraft:stick"},
+    "W": {"item": "minecraft:string"}
+  },
+  "result": {"item": "hoghunter:bolt_gun", "count": 1}
+}

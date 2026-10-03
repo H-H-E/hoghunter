@@ -1,0 +1,1 @@
+{"variants":{"facing=north":{"model":"hoghunter:block/ritual_altar_inventory"},"facing=east":{"model":"hoghunter:block/ritual_altar_inventory","y":90},"facing=south":{"model":"hoghunter:block/ritual_altar_inventory","y":180},"facing=west":{"model":"hoghunter:block/ritual_altar_inventory","y":270}}}

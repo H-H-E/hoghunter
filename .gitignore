@@ -1,0 +1,38 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# NeoGradle / ModDevGradle runtime working directories
+run/
+run-data/
+run-client/
+run-server/
+run-gametest/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+eclipse/
+
+# Local logs and scratch output from verification runs
+*.log
+gametest-run.log
+build-run.log
+run_server.log
+run_server_prev.log
+compile-final.log
+
+# One-off scratch probes from development; hardcoded absolute paths, not portable.
+tools/probe_src*.py
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
