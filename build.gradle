@@ -70,6 +70,8 @@ tasks.withType(JavaCompile).configureEach {
 tasks.withType(AbstractArchiveTask).configureEach {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
+    includeEmptyDirs = false
+    exclude '.cache', '.cache/**'
 }
 
 tasks.named('runGameTestServer').configure {

@@ -30,14 +30,14 @@ claims from the earlier handoff are not substituted for verification of changed 
 | `python3 tools/verify_resources.py` | Passed | 30 registered items, six blocks, seven species, 26 sounds, and 144 JSON resources; structural checks are not gameplay tests |
 | `python3 tools/make_gametest_structure.py --check` | Passed | Deterministic 33 × 8 × 33 template, independently decoded; exact generated NBT matches the committed file |
 | `python3 tools/gen_assets.py --manifest tools/assets/manifest.json --out src/main/resources --seed 20261003 --check` | Passed for 52 declared outputs | Regenerated in a temporary directory; original asset-tree hashes unchanged by the check |
-| `./gradlew compileJava --no-daemon --console=plain` | Passed; final `build` also executed `compileJava` | `integrated/compile-1`, `integrated/build-release`, and the hosted CI run |
-| `./gradlew build --no-daemon --console=plain` | Passed, exit 0 | `integrated/build-release`; rebuilt after the final client Java/model/armor repairs |
+| `./gradlew compileJava --no-daemon --console=plain` | Passed on the final Java source | `integrated/build-release` and the hosted CI run; the final archive-only rebuild reused these classes |
+| `./gradlew build --no-daemon --console=plain` | Passed, exit 0 | `integrated/build-distribution`; includes the final client/armor fixes and archive reproducibility correction |
 | `./gradlew runData --no-daemon --console=plain` | Passed, exit 0 | `integrated/datagen-2` and hosted CI; **zero datagen providers**, so this is bootstrap evidence |
 | `./gradlew runGameTestServer --no-daemon --console=plain` | All **39/39 required tests passed**, exit 0 | `integrated/gametest-4` and hosted CI; controlled server behavior, not a full survival playthrough |
 | `python3 tools/smoke_server.py --timeout 240` | All **15 assertions passed**, clean exit 0 | `integrated/server-2` and hosted CI: readiness, seven species, incoming damage, and six blocks on a dedicated development server |
-| `python3 tools/verify_resources.py --jar build/libs/hoghunter-0.1.0.jar` | Passed on the final local JAR | `integrated/jar-resources-release.log`; current resource bytes/class presence and 24 native model/texture assets checked against the real Minecraft resource archive |
+| `python3 tools/verify_resources.py --jar build/libs/hoghunter-0.1.0.jar` | Passed on the final local JAR | `integrated/jar-resources-distribution.log`; current resource bytes/class presence and 24 native model/texture assets checked against the real Minecraft resource archive |
 | Actual client, including packaged-JAR launches | Observed scenarios passed; packaged save/stop verified | `integrated/client-2`, `integrated/client-final`, and `integrated/client-release`; exact scope below, with OpenAL null output |
-| Hosted clean-checkout CI | All steps passed on commit `4dd3fc8c4aab31a55c0b4e0f5dcce453940228ff` | [Run 37161739823](https://github.com/H-H-E/hoghunter/actions/runs/37161739823), using ordinary hosted Ubuntu/JDK 21 and unmodified upstream tools |
+| Hosted clean-checkout CI | All steps passed on commit `7c6142bc06ebd3cd329e46246233068004f55ea9`, including all 39 GameTests and 15 server assertions | [Run 37162958406](https://github.com/H-H-E/hoghunter/actions/runs/37162958406), using ordinary hosted Ubuntu/JDK 21 and unmodified upstream tools |
 
 The stock hosted run establishes clean-checkout toolchain support independently of the local
 workaround. Subsequent source revisions are checked by the same
@@ -73,20 +73,35 @@ and `assertions.json`; it never resets an existing development world.
 
 ### Packaged artifact and client observations
 
-The final local build produced `hoghunter-0.1.0.jar`, **337,906 bytes**, with SHA-256:
+The final local build produced `hoghunter-0.1.0.jar`, **337,814 bytes**, with SHA-256:
 
 ```text
-659b11159e28f966b6bd0066a5821b7931da886c8a4071e2440b3af3c32db788
+22afdecbfab6bba52703df024d4926a316f238c564820bdda743d00245798984
 ```
 
-`integrated/release-artifacts.json` records the binary and source-JAR hashes. The release client copied
-this exact binary into an isolated `mods` directory, cleared the exploded ModDev mod source
-mapping, and entered a saved world. The launch configuration and hash are recorded in
-`integrated/client-release/session.json`. The preceding packaged run's
-`integrated/client-final/launch-evidence/packaged-load-proof.json` also records captured launch
-files without exploded mod paths. These clients used a real 1280 × 720 Xvfb/Mesa llvmpipe OpenGL
-context. The packaged save/stop run saved all dimensions and exited cleanly with code 0; session
-and status records identify each individual invocation.
+This hash exactly matches the binary produced by the passed hosted CI run above.
+`integrated/distribution-artifacts.json` records the final binary and source-JAR hashes.
+
+The last build correction excludes empty directories and datagen `.cache` paths from archives.
+Running datagen before a local build had added an empty `.cache/` entry, changing the local JAR
+hash without changing its contents. `integrated/archive-reproducibility.json` records a
+byte-for-byte comparison of every decompressed file: all **273 non-directory entries** are
+identical to the client-tested archive, with no added, removed, or changed files. Only the empty
+`.cache/` entry was removed, reducing the entry count from 333 to 332. This makes the local
+distribution artifact identical to clean CI regardless of that earlier datagen run.
+
+The release client used the preceding archive, SHA-256
+`659b11159e28f966b6bd0066a5821b7931da886c8a4071e2440b3af3c32db788`, whose payload equivalence is
+established above. It copied that JAR into an isolated `mods` directory, cleared the exploded
+ModDev mod source mapping, and entered a saved world. Its launch configuration and exact hash are
+recorded in `integrated/client-release/session.json`. The preceding packaged run's
+`integrated/client-final/launch-evidence/packaged-load-proof.json` also records launch files without
+exploded mod paths. These clients used a real 1280 × 720 Xvfb/Mesa llvmpipe OpenGL context.
+
+The release client completed Save and Quit, reached the title screen, and exited with code 0;
+controller/session records and screenshots provide that receipt. Its retained client log covers
+startup only, so it is not cited as a complete shutdown or later-error log. Earlier `client-2`
+and `client-final` runs retain their full save/shutdown logs, including all dimensions saved.
 
 The inspected client captures establish:
 
